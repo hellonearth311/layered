@@ -90,3 +90,12 @@ def index(request):
 
 def dashboard(request):
     return render(request, "layered_site/dashboard.html")
+
+def projects(request):
+    return render(request, "layered_site/projects.html")
+
+def explore(request):
+    return render(request, "layered_site/explore.html")
+
+def shop(request):
+    return render(request, "layered_site/shop.html")
