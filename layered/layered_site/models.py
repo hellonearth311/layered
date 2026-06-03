@@ -25,3 +25,19 @@ class Project(models.Model):
 
 	def __str__(self):
 		return f"{self.id}: {self.title}"
+
+class Item(models.Model):
+	name = models.CharField(max_length=60)
+	description = models.CharField(max_length=100)
+	cost = models.PositiveIntegerField()
+
+class Permissions(models.Model):
+	class Meta:
+		permissions = [
+			("t1_review", "T1 Project Review"),
+			("t2_review", "T2 Project Review"),
+			("t3_review", "T3/Fraud Project Review"),
+			("printer", "Project Printer"),
+			("fulfillment", "Fulfill shop orders"),
+			("statistics", "View statistics")
+		]
