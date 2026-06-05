@@ -21,4 +21,5 @@ urlpatterns = [
     path("root/review", views.review_dash, name="review_dash"),
     path("root/ysws_review", views.ysws_review_dash, name="ysws_review_dash"),
     path("root/fraud_review", views.fraud_review_dash, name="fraud_review_dash"),
+    path("root/print", views.print_dash, name="print_dash"),
 ]  

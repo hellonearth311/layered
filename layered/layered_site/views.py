@@ -188,6 +188,13 @@ def fulfillment_dash(request):
     return render(request, "root/fulfillment.html")
 
 @staff_member_required
+def print_dash(request):
+    if not request.user.has_perm("layered_site.printer") or not request.user.has_perm("layered_site.organizer"):
+        raise PermissionDenied
+    # fetch projects to print later
+    return render(request, "root/print.html")
+
+@staff_member_required
 def review_dash(request):
     if not request.user.has_perm("layered_site.t1_review") or not request.user.has_perm("layered_site.organizer") or not request.user.has_perm("layered_site.t2_review") or not request.user.has_perm("layered_site.t3_review"):
         raise PermissionDenied
