@@ -16,6 +16,7 @@ urlpatterns = [
     path("projects/<int:project_id>/unlock/", views.unlock_project, name="unlock_project"),
     path("explore/", views.explore, name="explore"),
     path("shop/", views.shop, name="shop"),
+    path("shop/<int:item_id>", views.item_detail, name="item_detail"),
     path("shop/<int:item_id>/delete/", views.delete_item, name="delete_item"),
     path("shop/<int:item_id>/edit/", views.edit_item, name="edit_item"),
     path("projects/create/", views.create_project, name="create_project"),

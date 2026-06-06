@@ -169,6 +169,14 @@ def project_detail(request, project_id):
         "project": project
     })
 
+@login_required
+def item_detail(request, item_id):
+    item = get_object_or_404(Item, id=item_id)
+
+    return render(request, "layered_site/item_detail.html", {
+        "item": item
+    })
+
 # admin views
 @staff_member_required
 def admin_dash(request):

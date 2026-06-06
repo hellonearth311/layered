@@ -1,0 +1,17 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Layered</title>
+    <link rel="stylesheet" href="{% static 'layered_site/style.css' %}">
+</head>
+<body id="item_detail_page">
+    <h1>{{ item.name }}</h1>
+
+    <p>{{ item.description }}</p>
+    <p>{{ item.cost }} layers</p>
+
+    <p><a href="{% url 'shop' %}">Back to shop</a></p>
+</body>
+</html>
