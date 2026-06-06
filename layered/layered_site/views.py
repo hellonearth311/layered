@@ -158,7 +158,7 @@ def delete_project(request, project_id):
 
     project.deleted = True
     project.save()
-    
+
     return redirect("projects")
 
 @login_required
@@ -296,7 +296,9 @@ def edit_item(request, item_id):
 @require_POST
 def delete_item(request, item_id):
     item = get_object_or_404(Item, item_id)
-    item.delete()
+
+    item.deleted = True
+    item.save()
 
     return redirect("root/shop")
 
