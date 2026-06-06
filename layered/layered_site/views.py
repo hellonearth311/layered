@@ -255,11 +255,11 @@ def create_item(request):
 @staff_member_required
 @require_POST
 def edit_item(request, item_id):
-    get_object_or_404(Item, item_id)
+    item = get_object_or_404(Item, id=item_id)
 
-    name = request.POST.get("title", "").strip()
+    name = request.POST.get("name", "").strip()
     description = request.POST.get("description", "").strip()
-    cost = request.POST.get("printables_url", "").strip()
+    cost = request.POST.get("cost", "").strip()
 
     if not name:
         messages.error(request, "Name is required.")
@@ -279,12 +279,6 @@ def edit_item(request, item_id):
         messages.error(request, "Cost must be a whole number.")
         return redirect("root/shop")
 
-    item = Item.objects.create(
-        name = name,
-        description = description,
-        cost = cost
-    )
-
     item.name = name
     item.description = description
     item.cost = cost
@@ -295,7 +289,7 @@ def edit_item(request, item_id):
 @staff_member_required
 @require_POST
 def delete_item(request, item_id):
-    item = get_object_or_404(Item, item_id)
+    item = get_object_or_404(Item, id=item_id)
 
     item.deleted = True
     item.save()
@@ -305,7 +299,7 @@ def delete_item(request, item_id):
 @staff_member_required
 @require_POST
 def lock_project(request, project_id):
-    project = get_object_or_404(Project, project_id)
+    project = get_object_or_404(Project, id=project_id)
     
     project.locked = True
     project.save()
@@ -316,7 +310,7 @@ def lock_project(request, project_id):
 @staff_member_required
 @require_POST
 def unlock_project(request, project_id):
-    project = get_object_or_404(Project, project_id)
+    project = get_object_or_404(Project, id=project_id)
     
     project.locked = False
     project.save()

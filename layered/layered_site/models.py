@@ -63,9 +63,10 @@ class Item(models.Model):
 		return f"{self.name} ({self.description}) for {self.cost} layers"
 
 class Permissions(models.Model):
-	verbose_name = "Permission"
-	verbose_name_plural = "Permissions"
 	class Meta:
+		verbose_name = "Permission"
+		verbose_name_plural = "Permissions"
+		
 		permissions = [
 			("t1_review", "T1 Project Review"),
 			("t2_review", "T2 Project Review"),
