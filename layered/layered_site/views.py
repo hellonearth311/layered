@@ -155,7 +155,10 @@ def edit_project(request, project_id):
 @require_POST
 def delete_project(request, project_id):
     project = get_object_or_404(request.user.projects, id=project_id)
-    project.delete()
+
+    project.deleted = True
+    project.save()
+    
     return redirect("projects")
 
 @login_required

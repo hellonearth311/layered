@@ -30,6 +30,7 @@
             {% if projects %}
                 <ul>
                     {% for project in projects %}
+                            {% if not project.deleted %}
                             <li class="project-card" data-project-id="{{ project.id }}">
                                 <div class="card-row">
                                     <div class="card-main">
@@ -53,6 +54,7 @@
                                     </div>
                                 </div>
                             </li>
+                            {% endif %}
                         {% endfor %}
                 </ul>
             {% else %}

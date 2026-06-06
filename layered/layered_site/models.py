@@ -23,6 +23,7 @@ class Project(models.Model):
 	printablesUrl = models.CharField(max_length=150)
 	created_at = models.DateTimeField(auto_now_add=True)
 	locked = models.BooleanField(default=False)
+	deleted = models.BooleanField(default=False)
 
 	def __str__(self):
 		return f"{self.id}: {self.title}"
