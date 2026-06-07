@@ -35,7 +35,7 @@ class Ship(models.Model):
 		related_name="ships"
 	)
 	created_at = models.DateTimeField(auto_now_add=True)
-	class ProjectStatus(models.TextChoices):
+	class ShipStatus(models.TextChoices):
 			T1_QUEUE = "T1", "Under T1 Review"
 			PRINT_QUEUE = "PQ", "In print queue"
 			BEING_PRINTED = "BP", "Being printed"
@@ -45,8 +45,8 @@ class Ship(models.Model):
 		
 	status = models.CharField(
 		max_length=2,
-		choices=ProjectStatus.choices,
-		default=ProjectStatus.T1_QUEUE,
+		choices=ShipStatus.choices,
+		default=ShipStatus.T1_QUEUE,
 	)
 
 	def __str__(self):
@@ -58,6 +58,7 @@ class Item(models.Model):
 	description = models.CharField(max_length=100)
 	cost = models.PositiveIntegerField()
 	deleted = models.BooleanField(default=False)
+	imageUrl = models.CharField(max_length=250, default="https://example.com")
 
 	def __str__(self):
 		return f"{self.name} ({self.description}) for {self.cost} layers"

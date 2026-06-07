@@ -268,6 +268,7 @@ def edit_item(request, item_id):
     name = request.POST.get("name", "").strip()
     description = request.POST.get("description", "").strip()
     cost = request.POST.get("cost", "").strip()
+    imageUrl = request.POST.get("imageUrl", "").strip()
 
     if not name:
         messages.error(request, "Name is required.")
@@ -290,6 +291,7 @@ def edit_item(request, item_id):
     item.name = name
     item.description = description
     item.cost = cost
+    item.imageUrl = imageUrl
     item.save()
 
     return redirect("root/shop")
