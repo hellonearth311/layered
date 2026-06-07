@@ -97,6 +97,25 @@ body {
     position: relative;
 }
 
+.item-list {
+    margin: 24px 0;
+}
+
+.item-list ul {
+    list-style: none;
+    padding: 0;
+    margin: 16px 0 0;
+    display: grid;
+    gap: 12px;
+}
+
+.item-card {
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    padding: 16px;
+    position: relative;
+}
+
 .card-row {
     display: flex;
     justify-content: space-between;

@@ -100,7 +100,8 @@ def explore(request):
     return render(request, "layered_site/explore.html")
 
 def shop(request):
-    return render(request, "layered_site/shop.html")
+    items = Item.objects.filter(deleted=False).order_by("id")
+    return render(request, "layered_site/shop.html", {"items": items})
 
 @login_required
 def project_list(request):
@@ -189,8 +190,8 @@ def admin_dash(request):
 def shop_dash(request):
     if not request.user.has_perm("layered_site.fulfillment") or not request.user.has_perm("layered_site.organizer"):
         raise PermissionDenied
-    # fetch items and return later
-    return render(request, "root/shop.html")
+    items = Item.objects.order_by("id")
+    return render(request, "root/shop.html", {"items": items})
 
 @staff_member_required
 def fulfillment_dash(request):
@@ -233,32 +234,38 @@ def create_item(request):
     name = request.POST.get("name", "").strip()
     description = request.POST.get("description", "").strip()
     cost = request.POST.get("cost", "").strip()
+    imageUrl = request.POST.get("imageUrl", "").strip()
 
     if not name:
         messages.error(request, "Name is required.")
-        return redirect("root/shop")
+        return redirect("shop_dash")
     
     if not description:
         messages.error(request, "Description is required.")
-        return redirect("root/shop")
+        return redirect("shop_dash")
     
     if not cost:
         messages.error(request, "Cost is required.")
-        return redirect("root/shop")
+        return redirect("shop_dash")
+
+    if not imageUrl:
+        messages.error(request, "Image URL is required.")
+        return redirect("shop_dash")
 
     try:
         cost = int(cost)
     except ValueError:
         messages.error(request, "Cost must be a whole number.")
-        return redirect("root/shop")
+        return redirect("shop_dash")
 
     item = Item.objects.create(
         name = name,
         description = description,
-        cost = cost
+        cost = cost,
+        imageUrl = imageUrl
     )
 
-    return redirect("root/shop")
+    return redirect("shop_dash")
 
 @staff_member_required
 @require_POST
