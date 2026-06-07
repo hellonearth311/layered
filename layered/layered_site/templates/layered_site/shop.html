@@ -15,7 +15,28 @@
     </nav>
     <div class="content">
         <h1>Shop</h1>
-        <h2>This is where you can buy stuff!</h2>
+        <section class="item-list">
+            <h3>Items</h3>
+            {% if items %}
+                <ul>
+                    {% for item in items %}
+                        {% if not item.deleted %}
+                        <li class="project-card" data-item-id="{{ item.id }}">
+                            <div class="card-row">
+                                <div class="card-main">
+                                    <strong><a href="{% url 'item_detail' item.id %}">{{ item.name }}</a></strong>
+                                    <p>{{ item.description }}</p>
+                                    <p>{{ item.cost }} layers</p>        
+                                </div>
+                            </div>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+            </ul>
+            {% else %}
+                <p>No items in the shop yet! Check back later.</p>
+            {% endif %}
+        </section>
     </div>
 </body>
 </html>
