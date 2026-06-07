@@ -56,15 +56,16 @@ def auth_callback(request):
     email = userinfo.get("email")
     name = userinfo.get("name", "")
     sub = userinfo.get("sub")
+    clean_sub = sub.replace("!", "_")
 
     user, created = User.objects.get_or_create(
-        username=sub,
+        username=clean_sub, 
         defaults={
             "email": email,
             "first_name": userinfo.get("given_name", ""),
             "last_name": userinfo.get("family_name", "")
         },
-    )
+    )  
 
     Profile.objects.update_or_create(
         user=user,
