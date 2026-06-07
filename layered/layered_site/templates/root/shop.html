@@ -26,6 +26,7 @@
                         <li class="item-card" data-item-id="{{ item.id }}">
                             <div class="card-row">
                                 <div class="card-main">
+                                    <img src="{{ item.imageUrl }}" alt="{{ item.name }}" loading="lazy">
                                     <strong><a href="{% url 'item_detail' item.id %}">{{ item.name }}</a></strong>
                                     <p>{{ item.description }}</p>
                                     <p>{{ item.cost }} layers</p>        
@@ -59,12 +60,12 @@
 
                 <label>
                     Cost
-                    <input name="cost" placeholder="5 layers" required>
+                    <input name="cost" placeholder="5" required>
                 </label>
 
                 <label>
                     Image URL
-                    <input name="imageUrl" placeholder="https://example.com" required>
+                    <input type="url" name="imageUrl" placeholder="https://example.com" required>
                 </label>
 
                 <div class="modal-actions">

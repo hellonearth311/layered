@@ -12,8 +12,17 @@ from django.contrib import messages
 from .models import Profile, Project, Item
 
 import os
+import re
 
 FORCE_REAUTH_COOKIE = "hca_force_reauth"
+IMAGE_URL_RE = re.compile(r"^https?://[\w.-]+(?:\.[\w.-]+)+(?:[/?#].*)?$", re.IGNORECASE)
+PRINTABLES_URL_RE = re.compile(r"https:\/\/(?:www\.)?printables\.com(?:\/.*)?", re.IGNORECASE)
+
+def is_valid_image_url(value):
+    return bool(IMAGE_URL_RE.match(value))
+
+def is_valid_printables_url(value):
+    return bool(PRINTABLES_URL_RE.match(value))
 
 # setting up auth
 oauth = OAuth()
@@ -120,6 +129,14 @@ def create_project(request):
     if not title:
         messages.error(request, "Title is required.")
         return redirect("projects")
+    
+    if not description:
+        messages.error(request, "Description is required")
+        return redirect("projects")
+    
+    if not is_valid_printables_url(printables_url):
+        messages.error(request, "Printables URL must be a valid https://printables.com/xyz URL.")
+        return redirect("projects")
 
     project = Project.objects.create(
         owner = request.user,
@@ -143,6 +160,14 @@ def edit_project(request, project_id):
 
     if not title:
         messages.error(request, "Title is required.")
+        return redirect("projects")
+    
+    if not description:
+        messages.error(request, "Description is required")
+        return redirect("projects")
+    
+    if not is_valid_printables_url(printables_url):
+        messages.error(request, "Printables URL must be a valid https://printables.com/xyz URL.")
         return redirect("projects")
 
     project.title = title
@@ -253,6 +278,10 @@ def create_item(request):
         messages.error(request, "Image URL is required.")
         return redirect("shop_dash")
 
+    if not is_valid_image_url(imageUrl):
+        messages.error(request, "Image URL must be a valid http or https URL.")
+        return redirect("shop_dash")
+
     try:
         cost = int(cost)
     except ValueError:
@@ -288,6 +317,10 @@ def edit_item(request, item_id):
     
     if not cost:
         messages.error(request, "Cost is required.")
+        return redirect("root/shop")
+
+    if imageUrl and not is_valid_image_url(imageUrl):
+        messages.error(request, "Image URL must be a valid http or https URL.")
         return redirect("root/shop")
 
     try:
