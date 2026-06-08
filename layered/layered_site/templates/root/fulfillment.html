@@ -7,6 +7,25 @@
     <link rel="stylesheet" href="{% static 'layered_site/style.css' %}">
 </head>
 <body class="page" id="admin-fulfillment-page">
+    <nav class="sidebar">
+        <a href="/root/">home</a>
+        {% if perms.layered_site.fulfillment or perms.layered_site.organizer %}
+            <a href="/root/shop">shop management</a>
+            <a href="/root/fulfillment">fulfillment</a>
+        {% endif %}
+        {% if perms.layered_site.printer or perms.layered_site.organizer %}
+            <a href="/root/print">print</a>
+        {% endif %}
+        {% if perms.layered_site.t1_review or perms.layered_site.organizer %}
+            <a href="/root/review">review</a>
+        {% endif %}
+        {% if perms.layered_site.t2_review or perms.layered_site.organizer %}
+            <a href="/root/ysws_review">ysws review</a>
+        {% endif %}
+        {% if perms.layered_site.t3_review or perms.layered_site.organizer %}
+            <a href="/root/fraud_review">fraud review</a>
+        {% endif %}
+    </nav>
     <div class="content">
         <h1>Fulfillment Dash</h1>
         <h2>Hai I'm a Fulfillment Dash</h2>
