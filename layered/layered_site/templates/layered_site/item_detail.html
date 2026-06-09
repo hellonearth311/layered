@@ -26,6 +26,10 @@
         {% endif %}
 
         <p><a href="{% url 'shop' %}">Back to shop</a></p>
+        <div class="profile">
+            <p>{{ user.get_full_name }}</p>
+            <p>{{ profile.layers }} layers</p>
+        </div>
     </div>  
 </body>
 </html>

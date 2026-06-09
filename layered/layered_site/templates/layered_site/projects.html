@@ -63,6 +63,10 @@
         </section>
 
         <button type="button" id="openCreateModal">Create new project</button>
+        <div class="profile">
+            <p>{{ user.get_full_name }}</p>
+            <p>{{ profile.layers }} layers</p>
+        </div>
     </div>
 
     <div id="createProjectModal" class="modal hidden" aria-hidden="true" hidden>
@@ -116,7 +120,7 @@
 
                 <label>
                     Printables URL
-                    <input name="printables_url" placeholder="https://printables.com/..." type="url" pattern="https:\/\/(?:www\.)?printables\.com(?:\/.*)?" title="Please enter a valid Printables URL starting with https://" required>
+                    <input id="editPrintables" name="printables_url" placeholder="https://printables.com/..." type="url" pattern="https:\/\/(?:www\.)?printables\.com(?:\/.*)?" title="Please enter a valid Printables URL starting with https://" required>
                 </label>
 
                 <div class="modal-actions">

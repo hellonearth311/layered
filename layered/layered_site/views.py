@@ -106,22 +106,27 @@ def index(request):
     return render(request, "layered_site/home.html")
 
 def dashboard(request):
-    return render(request, "layered_site/dashboard.html")
+    profile = request.user.hackclub_profile
+    return render(request, "layered_site/dashboard.html", {'profile': profile})
 
 def projects(request):
-    return render(request, "layered_site/projects.html")
+    profile = request.user.hackclub_profile
+    return render(request, "layered_site/projects.html", {'profile': profile})
 
 def explore(request):
-    return render(request, "layered_site/explore.html")
+    profile = request.user.hackclub_profile
+    return render(request, "layered_site/explore.html", {'profile': profile})
 
 def shop(request):
+    profile = request.user.hackclub_profile
     items = Item.objects.filter(deleted=False).order_by("id")
-    return render(request, "layered_site/shop.html", {"items": items})
+    return render(request, "layered_site/shop.html", {"items": items, 'profile': profile})
 
 @login_required
 def project_list(request):
-    projects = request.user.projects.order_by("id")
-    return render(request, "layered_site/projects.html", {"projects": projects})
+    projects = request.user.projects.filter(deleted=False).order_by("id")
+    profile = request.user.hackclub_profile
+    return render(request, "layered_site/projects.html", {"projects": projects, "profile": profile})
 
 @login_required
 @require_POST

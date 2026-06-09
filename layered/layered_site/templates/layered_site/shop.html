@@ -44,6 +44,10 @@
                 <p>No items in the shop yet! Check back later.</p>
             {% endif %}
         </section>
+        <div class="profile">
+            <p>{{ user.get_full_name }}</p>
+            <p>{{ profile.layers }} layers</p>
+        </div>
     </div>
 </body>
 </html>

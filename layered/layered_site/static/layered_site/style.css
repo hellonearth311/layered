@@ -188,6 +188,14 @@ body {
     color: #a33;
 }
 
+.profile {
+    padding: 20px;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    z-index: 1000;
+}
+
 #loginButton,
 #logoutButton {
     background-color: aqua;
