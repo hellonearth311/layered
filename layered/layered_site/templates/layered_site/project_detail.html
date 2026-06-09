@@ -6,21 +6,29 @@
     <title>Layered</title>
     <link rel="stylesheet" href="{% static 'layered_site/style.css' %}">
 </head>
-<body id="project_detail_page">
-    <h1>{{ project.title }}</h1>
+<body class="page" id="project_detail_page">
+    <nav class="sidebar">
+        <a href="/dashboard">Home</a>
+        <a href="/projects">Projects</a>
+        <a href="/explore">Explore</a>
+        <a href="/shop">Shop</a>
+    </nav>
+    <div class="content">
+        <h1>{{ project.title }}</h1>
 
-    <p>{{ project.description }}</p>
+        <p>{{ project.description }}</p>
 
-    {% if project.printablesUrl %}
-        <p><a href="{{ project.printablesUrl }}" target="_blank" rel="noreferrer noopener">
-            View on Printables
-        </a></p>
-    {% endif %}
+        {% if project.printablesUrl %}
+            <p><a href="{{ project.printablesUrl }}" target="_blank" rel="noreferrer noopener">
+                View on Printables
+            </a></p>
+        {% endif %}
 
-    <p><a href="{% url 'projects' %}">Back to projects</a></p>
+        <p><a href="{% url 'projects' %}">Back to projects</a></p>
 
-    <h2>Journal Entries</h2>
+        <h2>Journal Entries</h2>
 
-    <p>Note: Journal entries will be implemented once we have a HQ PoC and we can implement lapse :)</p>
+        <p>Note: Journal entries will be implemented once we have a HQ PoC and we can implement lapse :)</p>
+    </div>
 </body>
 </html>

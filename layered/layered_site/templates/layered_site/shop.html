@@ -27,8 +27,13 @@
                                     <img src="{{ item.imageUrl }}" alt="{{ item.name }}" loading="lazy" style="max-width: 30%; max-height: 200px; height: auto;">
                                     <br>
                                     <strong><a href="{% url 'item_detail' item.id %}">{{ item.name }}</a></strong>
+
                                     <p>{{ item.description }}</p>
-                                    <p>{{ item.cost }} layers</p>        
+                                    <p>{{ item.cost }} layers</p> 
+                                    <form action="{% url 'order_item' item.id %}">
+                                        <button type="submit">Order</button>
+                                    </form>
+
                                 </div>
                             </div>
                         </li>

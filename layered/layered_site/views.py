@@ -209,7 +209,16 @@ def item_detail(request, item_id):
         "item": item
     })
 
-# admin views
+@login_required
+def order_item(request, item_id):
+    # add order code later
+    item = get_object_or_404(Item, id=item_id)
+
+    return render(request, "layered_site/order_item.html", {
+        "item": item
+    })
+
+# staff views
 @staff_member_required
 def admin_dash(request):
     # extra layer of security never hurt anyone eh
