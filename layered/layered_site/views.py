@@ -8,6 +8,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
 from django.core.exceptions import PermissionDenied
 from django.contrib import messages
+from django.utils import timezone
+from django.db import transaction
 
 from .models import Profile, Project, Item, Order
 
@@ -221,8 +223,10 @@ def order_page(request, item_id):
     return redirect("item_detail", item_id=item_id)
 
 @login_required
-@require_POST
 def order_item(request, item_id):
+    if request.method != "POST":
+        return redirect("item_detail", item_id=item_id)
+
     item = get_object_or_404(Item, id=item_id)
     quantity = request.POST.get("quantity", "").strip()
     user_notes = request.POST.get("user_notes", "").strip()
@@ -238,15 +242,32 @@ def order_item(request, item_id):
     except ValueError:
         messages.error(request, "Quantity must be a positive number.")
         return redirect("item_detail", item_id=item_id)
+    
+    total_cost = item.cost * quantity
 
-    order = Order.objects.create(
-        owner=request.user,
-        item=item,
-        quantity=quantity,
-        user_notes=user_notes
-    )
+    with transaction.atomic():
+        profile = Profile.objects.select_for_update().get(user=request.user)
 
+        if profile.layers < total_cost:
+            messages.error(
+                request,
+                "You do not have enough layers to purchase this item."
+            )
+            return redirect("item_detail", item_id=item_id)
+        
+        profile.layers -= total_cost
+        profile.save()
+
+        Order.objects.create(
+            owner=request.user,
+            item=item,
+            quantity=quantity,
+            user_notes=user_notes
+        )
+
+    messages.success(request, f"Successfully ordered {quantity}x {item.name}!")
     return redirect("shop")
+
 
 # staff views ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -270,8 +291,43 @@ def shop_dash(request):
 def fulfillment_dash(request):
     if not request.user.has_perm("layered_site.fulfillment") and not request.user.has_perm("layered_site.organizer"):
         raise PermissionDenied
-    # fetch orders to fulfill later
-    return render(request, "root/fulfillment.html")
+    orders = Order.objects.select_related("item", "owner").order_by("status", "-created_at")
+    profile = request.user.hackclub_profile
+    return render(request, "root/fulfillment.html", {
+        "orders": orders,
+        "profile": profile,
+    })
+
+
+@staff_member_required
+@require_POST
+def update_order_status(request, order_id):
+    if not request.user.has_perm("layered_site.fulfillment") and not request.user.has_perm("layered_site.organizer"):
+        raise PermissionDenied
+
+    order = get_object_or_404(Order.objects.select_related("item", "owner"), id=order_id)
+    action = request.POST.get("action", "").strip()
+
+    status_map = {
+        "pending": Order.OrderStatus.PENDING,
+        "fulfilled": Order.OrderStatus.FULFILLED,
+        "denied": Order.OrderStatus.DENIED,
+        "refunded": Order.OrderStatus.REFUNDED,
+    }
+
+    if action not in status_map:
+        messages.error(request, "Invalid order action.")
+        return redirect("fulfillment_dash")
+
+    order.status = status_map[action]
+    if order.status == Order.OrderStatus.FULFILLED:
+        order.fulfilled_at = timezone.now()
+    else:
+        order.fulfilled_at = None
+    order.save(update_fields=["status", "fulfilled_at"])
+
+    messages.success(request, f"Order #{order.id} updated to {order.get_status_display().lower()}.")
+    return redirect("fulfillment_dash")
 
 @staff_member_required
 def print_dash(request):
