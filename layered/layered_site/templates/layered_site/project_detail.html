@@ -25,7 +25,8 @@
         {% endif %}
 
         {% if project.owner == user %}
-        <form>
+        <form action="{% url 'ship_project' project.id %}" method="post">
+            {% csrf_token %}
             <button type="submit">Ship</button>
         </form>
         {% endif %}
