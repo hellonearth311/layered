@@ -11,7 +11,7 @@ from django.contrib import messages
 from django.utils import timezone
 from django.db import transaction
 
-from .models import Profile, Project, Item, Order
+from .models import Profile, Project, Item, Order, Ship
 
 from urllib.parse import urlparse
 
@@ -269,6 +269,20 @@ def order_item(request, item_id):
 
     messages.success(request, f"Successfully ordered {quantity}x {item.name}!")
     return redirect("shop")
+
+@login_required
+def ship_project(request, project_id):
+    if request.method != 'POST':
+        return redirect("project_detail", project_id=project_id)
+    
+    project = get_object_or_404(Project, id=project_id)
+    Ship.objects.create(
+        project = project,
+        status = Ship.ShipStatus.T1_QUEUE
+    )
+    
+    messages.success(request, f'Successfully shipped project "{project.title}"!')
+    return redirect("projects")
 
 
 # staff views ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
