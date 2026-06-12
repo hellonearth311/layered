@@ -203,9 +203,11 @@ def delete_project(request, project_id):
 @login_required
 def project_detail(request, project_id):
     project = get_object_or_404(request.user.projects, id=project_id)
+    user = request.user
 
     return render(request, "layered_site/project_detail.html", {
-        "project": project
+        "project": project,
+        "user": user
     })
 
 @login_required

@@ -24,6 +24,12 @@
             </a></p>
         {% endif %}
 
+        {% if project.owner == user %}
+        <form>
+            <button type="submit">Ship</button>
+        </form>
+        {% endif %}
+
         <p><a href="{% url 'projects' %}">Back to projects</a></p>
 
         <h2>Journal Entries</h2>
