@@ -204,10 +204,12 @@ def delete_project(request, project_id):
 def project_detail(request, project_id):
     project = get_object_or_404(request.user.projects, id=project_id)
     user = request.user
+    ships = project.ships.order_by('-created_at')
 
     return render(request, "layered_site/project_detail.html", {
         "project": project,
-        "user": user
+        "user": user,
+        "ships": ships
     })
 
 @login_required

@@ -35,6 +35,19 @@
         </form>
         {% endif %}
 
+        <br>
+        
+        {% if ships %}
+            {% for ship in ships %}
+                <div class="ship-card">
+                    <p1>Ship {{ forloop.counter }}</p1>
+                    <p2>Status: {{ ship.get_status_display }}</p2>
+                </div>
+            {% endfor %}    
+        {% else %}
+            <p>No ships yet!</p>
+        {% endif %}
+
         <p><a href="{% url 'projects' %}">Back to projects</a></p>
 
         <h2>Journal Entries</h2>
