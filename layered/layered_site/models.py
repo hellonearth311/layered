@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from django.conf import settings
 
 
-
+# auth model
 class Profile(models.Model):
 	user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="hackclub_profile")
 	verification_status = models.CharField(max_length=64, blank=True, default="")
@@ -13,6 +13,7 @@ class Profile(models.Model):
 	def __str__(self):
 		return self.user.username
 
+# project/ship models
 class Project(models.Model):
 	owner = models.ForeignKey(
 		settings.AUTH_USER_MODEL,
@@ -52,8 +53,66 @@ class Ship(models.Model):
 
 	def __str__(self):
 		return f"Ship created at {self.created_at} with status {self.status}"
+
+class T1(models.Model):
+	ship = models.ForeignKey(
+		Ship,
+		on_delete=models.CASCADE,
+		related_name="t1_reviews"
+	)
+	reviewer = models.ForeignKey(
+		User,
+		on_delete=models.PROTECT,
+		related_name="t1_reviews"
+	)
+
+	reviewed_at = models.DateTimeField(auto_now_add=True)
+	feedback = models.CharField(max_length=100)
+	internal_notes = models.CharField(max_length=100)
+	approved = models.BooleanField()
+	print = models.BooleanField(default=True)
+
+class Print(models.Model):
+	ship = models.ForeignKey(
+		Ship,
+		on_delete=models.CASCADE,
+		related_name="prints"
+	)
+	printer = models.ForeignKey(
+		User,
+		on_delete=models.PROTECT,
+		related_name="prints"
+	)
+
+	weight = models.IntegerField(blank=True)
+	printed = models.BooleanField(default=False)
+	image_url = models.CharField(max_length=200, blank=True)
+	feedback = models.CharField(max_length=100, blank=True)
+	internal_notes = models.CharField(max_length=100, blank=True)
+
+class T2(models.Model):
+	ship = models.ForeignKey(
+		Ship,
+		on_delete=models.CASCADE,
+		related_name="t2_reviews"
+	)
+	reviewer = models.ForeignKey(
+		User,
+		on_delete=models.PROTECT,
+		related_name="t2_reviews"
+	)
+
+	reviewed_at = models.DateTimeField(auto_now_add=True)
+	feedback = models.CharField(max_length=100)
+	justification = models.CharField(max_length=400)
+	approved = models.BooleanField()
+	deductions = models.IntegerField(default=0)
+
+# class T3(models.Model):
 	
 
+
+# shop models
 class Item(models.Model):
 	name = models.CharField(max_length=60)
 	description = models.CharField(max_length=100)
@@ -96,6 +155,7 @@ class Order(models.Model):
 	created_at = models.DateTimeField(auto_now_add=True)
 	quantity = models.PositiveIntegerField(default=1)
 
+# permissions model
 class Permissions(models.Model):
 	class Meta:
 		verbose_name = "Permission"
