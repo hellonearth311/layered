@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.conf import settings
+from django.utils import timezone
 
 
 # auth model
@@ -84,9 +85,23 @@ class Print(models.Model):
 		related_name="prints"
 	)
 
-	weight = models.IntegerField(blank=True)
-	printed = models.BooleanField(default=False)
+	class Decision(models.TextChoices):
+		RETURN_T1 = "T1", "Returned to T1 Review"
+		REJECT = "R", "Rejected"
+		APPROVE = "A", "Approve"
+
+	weight = models.IntegerField(null=True, blank=True)
+	decision = models.CharField(
+		max_length=2,
+		choices=Decision.choices,
+		default=Decision.APPROVE
+	)
+
+	claimed_time = models.DateTimeField(default=timezone.now)
+	unclaimed_time = models.DateTimeField(null=True, blank=True)
+
 	image_url = models.CharField(max_length=2048, blank=True)
+
 	feedback = models.CharField(max_length=100, blank=True)
 	internal_notes = models.CharField(max_length=100, blank=True)
 
@@ -101,14 +116,51 @@ class T2(models.Model):
 		on_delete=models.PROTECT,
 		related_name="t2_reviews"
 	)
+	class Decision(models.TextChoices):
+		RETURN_T1 = "T1", "Returned to T1 Review"
+		RETURN_PRINT = "P", "Returned to Printers"
+		APPROVE = "A", "Approved"
 
 	reviewed_at = models.DateTimeField(auto_now_add=True)
+	decision = models.CharField(
+		max_length=2,
+		choices=Decision.choices,
+		default=Decision.APPROVE
+	)
+
+	deductions = models.IntegerField(default=0)
 	feedback = models.CharField(max_length=100)
 	justification = models.CharField(max_length=400)
-	approved = models.BooleanField()
-	deductions = models.IntegerField(default=0)
 
-# class T3(models.Model):
+class T3(models.Model):
+	ship = models.ForeignKey(
+		Ship,
+		on_delete=models.CASCADE,
+		related_name="t3_reviews"
+	)
+	reviewer = models.ForeignKey(
+		User,
+		on_delete=models.PROTECT,
+		related_name="t3_reviews"
+	)
+
+	class Decision(models.TextChoices):
+		RETURN_T1 = "T1", "Returned to T1 Review"
+		RETURN_PRINT = "P", "Returned to Printers"
+		RETURN_T2 = "T2", "Returned to T2 Review"
+		APPROVE = "A", "Approved"
+
+	reviewed_at = models.DateTimeField(auto_now_add=True)
+	decision = models.CharField(
+		max_length=2	,
+		choices=Decision.choices,
+		default=Decision.APPROVE,
+	)
+
+	payout_hours = models.IntegerField()
+	airtable_hours = models.IntegerField()
+
+	internal_comments = models.CharField(blank=True)
 
 class Journal(models.Model):
 	project = models.ForeignKey(

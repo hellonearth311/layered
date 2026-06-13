@@ -370,29 +370,39 @@ def update_order_status(request, order_id):
 def print_dash(request):
     if not request.user.has_perm("layered_site.printer") and not request.user.has_perm("layered_site.organizer"):
         raise PermissionDenied
-    # fetch projects to print later
+    
+    ships = Ship.objects.filter(status=Ship.ShipStatus.PRINT_QUEUE)
     return render(request, "root/print.html")
 
 @staff_member_required
 def review_dash(request):
     if not request.user.has_perm("layered_site.t1_review") and not request.user.has_perm("layered_site.organizer") and not request.user.has_perm("layered_site.t2_review") and not request.user.has_perm("layered_site.t3_review"):
         raise PermissionDenied
-    # fetch projects to review later
-    return render(request, "root/review.html")
+    
+    ships = Ship.objects.filter(status=Ship.ShipStatus.T1_QUEUE)
+    return render(request, "root/review.html", {
+        "ships": ships
+    })
 
 @staff_member_required
 def ysws_review_dash(request):
     if not request.user.has_perm("layered_site.t2_review") and not request.user.has_perm("layered_site.organizer") and not request.user.has_perm("layered_site.t3_review"):
         raise PermissionDenied
-    # fetch projects to review later
-    return render(request, "root/ysws_review.html")
+    
+    ships = Ship.objects.filter(status=Ship.ShipStatus.T2_QUEUE)
+    return render(request, "root/ysws_review.html", {
+        "ships": ships
+    })
 
 @staff_member_required
 def fraud_review_dash(request):
     if not request.user.has_perm("layered_site.t3_review") and not request.user.has_perm("layered_site.organizer"):
         raise PermissionDenied
-    # fetch projects to review later
-    return render(request, "root/fraud_review.html")
+    
+    ships = Ship.objects.filter(status=Ship.ShipStatus.T3_QUEUE)
+    return render(request, "root/fraud_review.html", {
+        "ships": ships
+    })
 
 @staff_member_required
 @require_POST
