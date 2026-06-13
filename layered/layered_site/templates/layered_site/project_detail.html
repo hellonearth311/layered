@@ -14,45 +14,51 @@
         <a href="/shop">Shop</a>
     </nav>
     <div class="content">
-        <h1>{{ project.title }}</h1>
+        <div class="project-info">
+            <h1>{{ project.title }}</h1>
+            <p>{{ project.description }}</p>
+            {% if project.printablesUrl %}
+                <p><a href="{{ project.printablesUrl }}" target="_blank" rel="noreferrer noopener">
+                    View on Printables
+                </a></p>
+            {% endif %}
+            <p><a href="{% url 'projects' %}">Back to projects</a></p>
+            {% if project.locked %}
+                <p style="color: red; font-weight: bold;">Locked</p>
+            {% endif %}
+            {% if project.owner == user %}
+                <form action="{% url 'ship_project' project.id %}" method="post">
+                    {% csrf_token %}
+                    <button type="submit">Ship</button>
+                </form>
+            {% endif %}
+        </div>
+        <div class="ships-section">
+            {% if ships %}
+                {% for ship in ships %}
+                    <div class="ship-card">
+                        <p1>Ship {{ forloop.counter }}</p1>
+                        <p2>Status: {{ ship.get_status_display }}</p2>
+                    </div>
+                {% endfor %}    
+            {% else %}
+                <p>No ships yet!</p>
+            {% endif %}
+        </div>
 
-        <p>{{ project.description }}</p>
-
-        {% if project.printablesUrl %}
-            <p><a href="{{ project.printablesUrl }}" target="_blank" rel="noreferrer noopener">
-                View on Printables
-            </a></p>
-        {% endif %}
-
-        {% if project.locked %}
-        <p style="color: red; font-weight: bold;">Locked</p>
-        {% endif %}
-
-        {% if project.owner == user %}
-        <form action="{% url 'ship_project' project.id %}" method="post">
-            {% csrf_token %}
-            <button type="submit">Ship</button>
-        </form>
-        {% endif %}
-
-        <br>
-        
-        {% if ships %}
-            {% for ship in ships %}
-                <div class="ship-card">
-                    <p1>Ship {{ forloop.counter }}</p1>
-                    <p2>Status: {{ ship.get_status_display }}</p2>
-                </div>
-            {% endfor %}    
-        {% else %}
-            <p>No ships yet!</p>
-        {% endif %}
-
-        <p><a href="{% url 'projects' %}">Back to projects</a></p>
-
+        <div class="journal-section">
         <h2>Journal Entries</h2>
-
-        <p>Journal entries coming soon!</p>
+            {% if project.owner == user %}
+                <form>
+                    <textarea 
+                        maxlength="2000" 
+                        placeholder="What did you do?" 
+                        style="display:block; width: 500px; height: 500px; text-align: left; resize: none; padding: 10px; box-sizing: border-box; margin-bottom: 20px;"
+                    ></textarea>
+                    <button type="submit">Submit entry!</button>
+                </form>
+            {% endif %}
+        </div>
         <div class="profile">
             <p>{{ user.get_full_name }}</p>
             <p>{{ profile.layers }} layers</p>
