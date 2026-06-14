@@ -28,7 +28,17 @@
     </nav>
     <div class="content">
         <h1>Fraud Review Dash</h1>
-        <h2>Hai I'm a Fraud Review Dash</h2>
+        <h3>(T3) Review em projects!!</h3>
+        {% for ship in ships %}
+            <li class="project-card" data-project-id="{{ ship.project.id }}">
+                <div class="card-row">
+                    <div class="card-main">
+                        <strong>{{ ship.project.title }}</strong>
+                        <p>{{ ship.project.description }}</p>
+                    </div>
+                </div>
+            </li>    
+        {% endfor%}
     </div>
 </body>
 </html>
