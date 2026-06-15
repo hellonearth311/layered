@@ -11,7 +11,7 @@ from django.contrib import messages
 from django.utils import timezone
 from django.db import transaction
 
-from .models import Profile, Project, Item, Order, Ship
+from .models import Profile, Project, Item, Order, Ship, T1, T2, T3, Print
 
 from urllib.parse import urlparse
 
@@ -401,6 +401,30 @@ def review_project(request, ship_id):
     return render(request, "root/review_project.html", {
         "ship": ship
     })
+
+@staff_member_required
+def t1_decision(request, ship_id):
+    if not request.user.has_perm("layered_site.t1_review") and not request.user.has_perm("layered_site.organizer") and not request.user.has_perm("layered_site.t2_review") and not request.user.has_perm("layered_site.t3_review"):
+        raise PermissionDenied
+    
+    reviewer = request.user
+    ship = get_object_or_404(Ship, id=ship_id)
+    feedback = request.POST.get("feedback", "").strip()
+    internal_notes = request.POST.get("internal_notes", "").strip()
+    print = request.POST.get("print", "").strip()
+    approved = request.POST.get("approved", "").strip()
+
+    T1.objects.create(
+        reviewer=reviewer,
+        ship=ship,
+        feedback=feedback,
+        internal_notes=internal_notes,
+        print=print,
+        approved=approved
+    )
+
+    messages.success(request, f'Successfully reviewed project "{ship.project.title}" with approved = {approved} and print = {print}!')
+    return redirect("review")
 
 @staff_member_required
 def ysws_review_dash(request):
