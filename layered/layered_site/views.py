@@ -402,6 +402,7 @@ def review_project(request, ship_id):
         "ship": ship
     })
 
+@require_POST
 @staff_member_required
 def t1_decision(request, ship_id):
     if not request.user.has_perm("layered_site.t1_review") and not request.user.has_perm("layered_site.organizer") and not request.user.has_perm("layered_site.t2_review") and not request.user.has_perm("layered_site.t3_review"):
@@ -411,19 +412,32 @@ def t1_decision(request, ship_id):
     ship = get_object_or_404(Ship, id=ship_id)
     feedback = request.POST.get("feedback", "").strip()
     internal_notes = request.POST.get("internal_notes", "").strip()
-    print = request.POST.get("print", "").strip()
-    approved = request.POST.get("approved", "").strip()
+    print_requested = "print" in request.POST
+    approved_raw = request.POST.get("approved", "").strip()
+
+    if approved_raw not in ("approved", "denied"):
+        messages.error(request, f"How did we get here? (approved: {approved_raw})")
+        return redirect("review")
+
+    approved = approved_raw == "approved"
+
+    if approved:
+        ship.status = Ship.ShipStatus.PRINT_QUEUE if print_requested else Ship.ShipStatus.T2_QUEUE
+    else:
+        ship.status = Ship.ShipStatus.REJECTED
+    
+    ship.save()
 
     T1.objects.create(
         reviewer=reviewer,
         ship=ship,
         feedback=feedback,
         internal_notes=internal_notes,
-        print=print,
+        print=print_requested,
         approved=approved
     )
 
-    messages.success(request, f'Successfully reviewed project "{ship.project.title}" with approved = {approved} and print = {print}!')
+    messages.success(request, f'Successfully reviewed project "{ship.project.title}" with approved = {approved} and print = {print_requested}!')
     return redirect("review")
 
 @staff_member_required
@@ -435,6 +449,54 @@ def ysws_review_dash(request):
     return render(request, "root/ysws_review.html", {
         "ships": ships
     })
+
+@require_POST
+@staff_member_required
+def t2_decision(request, ship_id):
+    if not request.user.has_perm("layered_site.t2_review") and not request.user.has_perm("layered_site.organizer") and not request.user.has_perm("layered_site.t3_review"):
+        raise PermissionDenied
+    
+    reviewer = request.user
+    ship = get_object_or_404(Ship, id=ship_id)
+    decision = request.POST.get("decision", "").strip()
+    deductions = request.POST.get("deductions", "0").strip()
+
+    # remember to verify if deductions are greater than project time spent
+
+    try:
+        deductions = int(deductions) if deductions else 0
+    except ValueError:
+        messages.error(request, f"how the fuck do you expect me to deduct a string from a number (got {deductions} expected integer)")
+        return redirect("ysws_review")
+
+    feedback = request.POST.get("feedback", "").strip()
+    justification = request.POST.get("justification", "").strip()
+
+    if decision == T2.Decision.APPROVE:
+        ship.status = Ship.ShipStatus.T3_QUEUE
+    elif decision == T2.Decision.RETURN_PRINT:
+        ship.status = Ship.ShipStatus.PRINT_QUEUE
+    elif decision == T2.Decision.RETURN_T1:
+        ship.status = Ship.ShipStatus.T1_QUEUE
+    else:
+        messages.error(request, f"How did we get here? (decision: {decision})")
+        return redirect("ysws_review")
+    
+    ship.save()
+
+    # remember to deduct time from journals later
+        
+    T2.objects.create(
+        ship=ship,
+        reviewer=reviewer,
+        decision=decision,
+        deductions=deductions,
+        feedback=feedback,
+        justification=justification
+    )
+
+    messages.success(request, f'Successfully reviewed project "{ship.project.title}" with decision {decision} and deduction of {deductions} minutes!')
+    return redirect("ysws_review")
 
 @staff_member_required
 def fraud_review_dash(request):
@@ -450,7 +512,7 @@ def fraud_review_dash(request):
 @require_POST
 def create_item(request):
     name = request.POST.get("name", "").strip()
-    description = request.POST.get("description", "").strip()
+    description = request.POST.get("description", "").strip()  
     cost = request.POST.get("cost", "").strip()
     imageUrl = request.POST.get("imageUrl", "").strip()
 

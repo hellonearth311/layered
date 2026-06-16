@@ -39,6 +39,7 @@ class Ship(models.Model):
 	)
 	created_at = models.DateTimeField(auto_now_add=True)
 	class ShipStatus(models.TextChoices):
+		REJECTED = "R", "Rejected"
 		T1_QUEUE = "T1", "Under T1 Review"
 		PRINT_QUEUE = "PQ", "In print queue"
 		BEING_PRINTED = "BP", "Being printed"
