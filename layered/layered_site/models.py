@@ -158,10 +158,10 @@ class T3(models.Model):
 		default=Decision.APPROVE,
 	)
 
-	payout_hours = models.IntegerField()
-	airtable_hours = models.IntegerField()
+	payout_hours = models.DecimalField(decimal_places=2, max_digits=5)
+	airtable_hours = models.DecimalField(decimal_places=2, max_digits=5)
 
-	internal_comments = models.CharField(blank=True)
+	internal_notes = models.CharField(blank=True)
 
 class Journal(models.Model):
 	project = models.ForeignKey(

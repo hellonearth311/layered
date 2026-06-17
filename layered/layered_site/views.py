@@ -519,6 +519,63 @@ def fraud_review_dash(request):
         "ships": ships
     })
 
+@require_POST
+@staff_member_required
+def t3_decision(request, ship_id):
+    user = request.user
+    if not user.has_perm("layered_site.organizer") and not user.has_perm("layered_site.t3_review"):
+        raise PermissionDenied
+    
+    ship = get_object_or_404(Ship, id=ship_id)
+    reviewer = request.user
+    decision = request.POST.get("decision", "").strip()
+    internal_notes = request.POST.get("internal_notes", "").strip()
+
+    if decision == T3.Decision.RETURN_T1:
+        ship.status = Ship.ShipStatus.T1_QUEUE
+    elif decision == T3.Decision.RETURN_PRINT:
+        ship.status = Ship.ShipStatus.PRINT_QUEUE
+    elif decision == T3.Decision.RETURN_T2:
+        ship.status = Ship.ShipStatus.T2_QUEUE
+    else:
+        messages.error(request, f"that shit does NOT work you fat fucking chud (received decision: {decision})")
+        return redirect("fraud_review")
+    
+    ship.save()
+    
+    payout_hours_raw = request.POST.get("payout", "0").strip()
+    airtable_hours_raw = request.POST.get("airtable_hours", "0").strip()
+
+    try:
+        payout_hours = float(payout_hours_raw)
+        if '.' in payout_hours_raw and len(payout_hours_raw.split('.')[1]) > 2:
+            messages.error(request, f"TWO DECIMAL PLACES MAX FATASS WHAT U NEED ALL THAT PRECISION FOR???? (input: {payout_hours_raw})")
+            return redirect("fraud_review")
+    except ValueError:
+        messages.error(request, f"so you see, the payout hours is supposed to be a number. guess what ur fatass put? {payout_hours_raw}. WHAT ARE YOU DOING???")
+        return redirect("fraud_review")
+    
+    try:
+        airtable_hours = float(airtable_hours_raw)
+        if '.' in airtable_hours_raw and len(airtable_hours_raw.split('.')[1]) > 2:
+            messages.error(request, f"TWO DECIMAL PLACES MAX FATASS WHAT U NEED ALL THAT PRECISION FOR???? (input: {airtable_hours_raw})")
+            return redirect("fraud_review")
+    except ValueError:
+        messages.error(request, f"so you see, the airtable hours is supposed to be a number. guess what ur fatass put? {airtable_hours_raw}. WHAT ARE YOU DOING???")
+        return redirect("fraud_review")
+
+    T3.objects.create(
+        ship=ship,
+        reviewer=reviewer,
+        decision=decision,
+        internal_notes=internal_notes,
+        payout_hours=payout_hours,
+        airtable_hours=airtable_hours
+    )
+
+    messages.success(request, f"good job. you did it right. i'm not complimenting you go lose some weight fattie. (project: {ship.project.title} with decision {decision})")
+    return redirect("fraud_review")
+
 @staff_member_required
 @require_POST
 def create_item(request):
