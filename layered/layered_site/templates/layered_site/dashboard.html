@@ -22,7 +22,7 @@
         <p>your slack id: {{ user.hackclub_profile.slack_id }}</p>
         <p>your slack username: {{ user.hackclub_profile.slack_username }}</p>
         <br>
-        <p>your slack PFP:</p>
+        <p>your slack PFP (512x512px):</p>
         <img src="{{ user.hackclub_profile.slack_pfp_url }}" style="height: 64; width: 64;">
 
         <form action="{% url 'logout' %}" method="post">
@@ -31,7 +31,8 @@
         </form>
 
         <div class="profile">
-            <p>{{ user.get_full_name }}</p>
+            <img src="{{ user.hackclub_profile.slack_pfp_url }}" id="pfp">
+            <p>{{ user.hackclub_profile.slack_username }}</p>
             <p>{{ profile.layers }} layers</p>
         </div>
     </div>

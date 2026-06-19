@@ -50,7 +50,8 @@
         </form>
 
         <div class="profile">
-            <p>{{ user.get_full_name }}</p>
+            <img src="{{ user.hackclub_profile.slack_pfp_url }}" id="pfp">
+            <p>{{ user.hackclub_profile.slack_username }}</p>
             <p>{{ profile.layers }} layers</p>
         </div>
     </div>  

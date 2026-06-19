@@ -202,3 +202,8 @@ body {
     padding: 10px;
     border-radius: 5px;
 }
+
+#pfp {
+    width: 96px;
+    height: auto;
+}
