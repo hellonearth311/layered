@@ -11,13 +11,14 @@ from django.contrib import messages
 from django.utils import timezone
 from django.db import transaction
 
-from .models import Profile, Project, Item, Order, Ship, T1, T2, T3, Print
+from .models import Profile, Project, Item, Order, Ship, T1, T2, T3, Print, Journal
 
 from urllib.parse import urlparse
 from slack_sdk import WebClient
 
 import os
 import re
+import requests
 
 FORCE_REAUTH_COOKIE = "hca_force_reauth"
 PRINTABLES_URL_RE = re.compile(r"https:\/\/(?:www\.)?printables\.com(?:\/.*)?", re.IGNORECASE)
@@ -28,8 +29,28 @@ def is_valid_printables_url(value):
 def is_valid_image_url(url):
     try:
         result = urlparse(url)
-        return result.scheme in ('http', 'https') and bool(result.netloc)
-    except ValueError:
+        if result.scheme not in ('http', 'https') or not result.netloc:
+            return False
+        response = requests.head(url, allow_redirects=True, timeout=5)
+        content_type = response.headers.get('Content-Type', '')
+        return content_type.startswith('image/')
+    except Exception:
+        return False
+
+def is_valid_stl_url(url):
+    try:
+        result = urlparse(url)
+        if result.scheme not in ('http', 'https') or not result.netloc:
+            return False
+        response = requests.head(url, allow_redirects=True, timeout=5)
+        content_type = response.headers.get('Content-Type', '')
+        stl_content_types = ('model/stl', 'model/x.stl-ascii', 'model/x.stl-binary', 'application/sla')
+        if any(content_type.startswith(ct) for ct in stl_content_types):
+            return True
+        if content_type.startswith('application/octet-stream') or not content_type:
+            return result.path.lower().endswith('.stl')
+        return False
+    except Exception:
         return False
 
 # setting up auth
@@ -299,12 +320,61 @@ def order_item(request, item_id):
     return redirect("shop")
 
 @login_required
+def create_journal(request, project_id):
+    if request.method != 'POST':
+        return redirect("project_detail", project_id=project_id)
+    
+    project = get_object_or_404(Project, id=project_id, owner=request.user, deleted=False)
+
+    if project.locked:
+        messages.error(request, "You cannot create a journal on a locked project.")
+        return redirect("projects")
+    time_spent_raw = request.POST.get("time_spent", "0").strip()
+    try:
+        time_spent = int(time_spent_raw)
+
+        if time_spent > 240:
+            messages.error(request, "Time spent must not be greater than 4 hours!")
+            return redirect("project_detail", project_id=project_id)
+    except ValueError:
+        messages.error(request, "Journal time spent must be an integer!")
+        return redirect("project_detail", project_id=project_id)
+    
+    title = request.POST.get("title", "").strip()
+    text = request.POST.get("text", "").strip()
+
+    image_url = request.POST.get("image_url", "").strip()
+    model_url = request.POST.get("model_url", "").strip()
+
+    if not is_valid_image_url(image_url):
+        messages.error(request, "Invalid image URL")
+        return redirect("project_detail", project_id=project_id)
+    if not is_valid_stl_url(model_url):
+        messages.error(request, "Invalid STL url")
+        return redirect("project_detail", project_id=project_id)
+    
+    Journal.objects.create(
+        project=project,
+        time_spent=time_spent,
+        title=title,
+        text=text,
+        image_url=image_url,
+        model_url=model_url
+    )
+
+    messages.success(request, "Journal entry created successfully")
+    return redirect("project_detail", project_id=project_id)
+    
+@login_required
 def ship_project(request, project_id):
     # remember to check if the weight is greater than the time spent x 100
     if request.method != 'POST':
         return redirect("project_detail", project_id=project_id)
     
-    project = get_object_or_404(Project, id=project_id)
+    project = get_object_or_404(Project, id=project_id, owner=request.user, deleted=False)
+    if project.locked:
+        messages.error(request, "This project is locked. You cannot ship a locked project.")
+        return redirect("projects")
     if not is_valid_printables_url(project.printablesUrl):
         messages.error(request, "you need a printables URL to ship!")
         return redirect("projects")
@@ -836,7 +906,7 @@ def lock_project(request, project_id):
     if not any(user.has_perm(perm) for perm in ["layered_site.organizer", "layered_site.t2_review", "layered_site.t3_review"]):
         raise PermissionDenied
 
-    project = get_object_or_404(Project, id=project_id)
+    project = get_object_or_404(Project, id=project_id, deleted=False)
     
     project.locked = True
     project.save()
@@ -851,7 +921,7 @@ def unlock_project(request, project_id):
     if not any(user.has_perm(perm) for perm in ["layered_site.organizer", "layered_site.t2_review", "layered_site.t3_review"]):
         raise PermissionDenied
 
-    project = get_object_or_404(Project, id=project_id)
+    project = get_object_or_404(Project, id=project_id, deleted=False)
     
     project.locked = False
     project.save()
