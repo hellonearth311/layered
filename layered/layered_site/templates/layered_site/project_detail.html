@@ -32,6 +32,7 @@
                     <button type="submit">Ship</button>
                 </form>
             {% endif %}
+            <br>
         </div>
         <div class="ships-section">
             {% if ships %}
@@ -49,12 +50,25 @@
         <div class="journal-section">
         <h2>Journal Entries</h2>
             {% if project.owner == user %}
+                <!-- <form action="{url 'create_journal' %}"> -->
                 <form>
+                    <input type="text" name="title" placeholder="Title">
+                    <input type="text" name="time_spent" placeholder="Time Spent (minutes)">
                     <textarea 
                         maxlength="2000" 
                         placeholder="What did you do?" 
                         style="display:block; width: 500px; height: 500px; text-align: left; resize: none; padding: 10px; box-sizing: border-box; margin-bottom: 20px;"
+                        name="text"
+                        required
                     ></textarea>
+                    <label for="image">Upload a photo of what you did!</label>
+                    <input type="file" name="image">
+                    <br>
+                    <br>
+                    <label for="STL">Upload an STL of your current project!</label>
+                    <input type="file" name="STL">
+                    <br>
+                    <br>
                     <button type="submit">Submit entry!</button>
                 </form>
             {% endif %}
