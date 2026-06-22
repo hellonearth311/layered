@@ -49,23 +49,6 @@
 
         <div class="journal-section">
         <h2>Journal Entries</h2>
-            {% if journals %}
-                {% for journal in journals %}
-                    <div class="journal-card">
-                        <h3>{{ journal.title }}</h3>
-                        <p>{{ journal.time_spent }} min</p>
-                        <p>{{ journal.text }}</p>
-                        {% if journal.image_url %}
-                            <img src="{{ journal.image_url }}" alt="{{ journal.title }}" style="max-width: 400px;">
-                        {% endif %}
-                        {% if journal.model_url %}
-                            <p><a href="{{ journal.model_url }}" target="_blank" rel="noreferrer noopener">Download STL</a></p>
-                        {% endif %}
-                    </div>
-                {% endfor %}
-            {% else %}
-                <p>No journal entries yet!</p>
-            {% endif %}
             {% if project.owner == user %}
                 <form action="{% url 'create_journal' project.id %}" method="post" enctype="multipart/form-data">
                     {% csrf_token %}
@@ -88,6 +71,23 @@
                     <br>
                     <button type="submit">Submit entry!</button>
                 </form>
+            {% endif %}
+            {% if journals %}
+                {% for journal in journals %}
+                    <div class="journal-card">
+                        <h3>{{ journal.title }}</h3>
+                        <p>{{ journal.time_spent }} min</p>
+                        <p>{{ journal.text }}</p>
+                        {% if journal.image_url %}
+                            <img src="{{ journal.image_url }}" alt="{{ journal.title }}" style="max-width: 400px;">
+                        {% endif %}
+                        {% if journal.model_url %}
+                            <p><a href="{{ journal.model_url }}" target="_blank" rel="noreferrer noopener">Download STL</a></p>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p>No journal entries yet!</p>
             {% endif %}
         </div>
         
