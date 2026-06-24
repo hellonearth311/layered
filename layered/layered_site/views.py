@@ -10,6 +10,7 @@ from django.core.exceptions import PermissionDenied
 from django.contrib import messages
 from django.utils import timezone
 from django.db import transaction
+from django.db.models import Sum
 from django.conf import settings
 from django.core.files.storage import default_storage
 
@@ -17,6 +18,7 @@ from .models import Profile, Project, Item, Order, Ship, T1, T2, T3, Print, Jour
 
 from urllib.parse import urlparse
 from slack_sdk import WebClient
+from math import floor
 
 import os
 import re
@@ -255,12 +257,34 @@ def project_detail(request, project_id):
     ships = project.ships.order_by('-created_at')
     journals = project.journals.order_by('-id')
 
+    total_time = journals.aggregate(total=Sum('time_spent'))['total'] or 0
+    time_spent = f"{floor(total_time / 60)}h {total_time % 60}m"
+
+    latest_ship = ships.first()
+    ship_pending = latest_ship is not None and latest_ship.status not in (Ship.ShipStatus.FINALIZED, Ship.ShipStatus.REJECTED)
+
+    if project.locked:
+        can_ship = False
+        ship_disabled_reason = "This project is locked and cannot be shipped."
+    elif not is_valid_printables_url(project.printablesUrl):
+        can_ship = False
+        ship_disabled_reason = "You need a valid Printables URL before you can ship."
+    elif ship_pending:
+        can_ship = False
+        ship_disabled_reason = "Your most recent ship must be finalized or rejected before you can reship."
+    else:
+        can_ship = True
+        ship_disabled_reason = ""
+
     return render(request, "layered_site/project_detail.html", {
         "project": project,
         "user": user,
         "profile": profile,
         "ships": ships,
         "journals": journals,
+        "time_spent": time_spent,
+        "can_ship": can_ship,
+        "ship_disabled_reason": ship_disabled_reason,
     })
 
 @login_required
@@ -400,6 +424,14 @@ def ship_project(request, project_id):
     if not is_valid_printables_url(project.printablesUrl):
         messages.error(request, "you need a printables URL to ship!")
         return redirect("projects")
+    if not project.description:
+        messages.error(request, "your project must have a description before you can ship!")
+        return redirect("projects")
+
+    latest_ship = project.ships.order_by('-created_at').first()
+    if latest_ship and latest_ship.status not in (Ship.ShipStatus.FINALIZED, Ship.ShipStatus.REJECTED):
+        messages.error(request, "You cannot reship until your most recent ship has been finalized or rejected.")
+        return redirect("project_detail", project_id=project_id)
 
     Ship.objects.create(
         project = project,
