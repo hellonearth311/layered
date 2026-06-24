@@ -209,6 +209,12 @@ class Order(models.Model):
 		on_delete=models.PROTECT,
 		related_name="orders"
 	)
+	fulfiller = models.ForeignKey(
+		settings.AUTH_USER_MODEL,
+		on_delete=models.PROTECT,
+		related_name="orders_fulfilled",
+		null=True
+	)
 
 	class OrderStatus(models.TextChoices):
 		PENDING = "P", "Pending"

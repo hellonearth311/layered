@@ -27,6 +27,7 @@
         {% endif %}
     </nav>
     <div class="content">
+        {% include "root/_messages.html" %}
         {% if messages %}
             <div class="messages">
                 {% for message in messages %}

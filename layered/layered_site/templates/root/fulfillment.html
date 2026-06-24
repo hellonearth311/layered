@@ -27,6 +27,7 @@
         {% endif %}
     </nav>
     <div class="content">
+        {% include "root/_messages.html" %}
         {% if messages %}
             <div class="messages">
                 {% for message in messages %}
@@ -39,9 +40,9 @@
         <section class="order-list">
             <h3>Pending</h3>
             {% if pending_orders %}
-                <ul>
+                <div>
                     {% for order in pending_orders %}
-                        <li class="order-card" data-order-id="{{ order.id }}">
+                        <div class="order-card" data-order-id="{{ order.id }}">
                             <div class="card-row">
                                 <div class="card-main">
                                     <img src="{{ order.item.imageUrl }}" alt="{{ order.item.name }}" loading="lazy" style="max-width: 30%; max-height: 200px; height: auto;">
@@ -54,6 +55,7 @@
                                     <p><strong>Quantity:</strong> {{ order.quantity }}</p>
                                     <p><strong>Status:</strong> {{ order.get_status_display }}</p>
                                     <p><strong>User notes:</strong> {{ order.user_notes|default:"None" }}</p>
+                                    <p><strong>Fulfiller: </strong> {{ order.fulfiller }}</p>
                                     <p><strong>Admin notes:</strong> {{ order.admin_notes|default:"None" }}</p>
                                     <p><strong>Created:</strong> {{ order.created_at }}</p>
                                     {% if order.fulfilled_at %}
@@ -68,11 +70,13 @@
                                         <button type="submit" name="action" value="refunded">Refund</button>
                                     </form>
 
+                                    <br>
+
                                 </div>
                             </div>
-                        </li>
+                        </div>
                     {% endfor %}
-                </ul>
+                </div>
             {% else %}
                 <p>No pending orders yet.</p>
             {% endif %}
@@ -80,9 +84,9 @@
         <section class="order-list">
             <h3>Other Orders</h3>
             {% if other_orders %}
-                <ul>
+                <div>
                     {% for order in other_orders %}
-                        <li class="order-card" data-order-id="{{ order.id }}">
+                        <div class="order-card" data-order-id="{{ order.id }}">
                             <div class="card-row">
                                 <div class="card-main">
                                     <img src="{{ order.item.imageUrl }}" alt="{{ order.item.name }}" loading="lazy" style="max-width: 30%; max-height: 200px; height: auto;">
@@ -95,6 +99,7 @@
                                     <p><strong>Quantity:</strong> {{ order.quantity }}</p>
                                     <p><strong>Status:</strong> {{ order.get_status_display }}</p>
                                     <p><strong>User notes:</strong> {{ order.user_notes|default:"None" }}</p>
+                                    <p><strong>Fulfiller: </strong> {{ order.fulfiller.hackclub_profile.slack_username }}</p>
                                     <p><strong>Admin notes:</strong> {{ order.admin_notes|default:"None" }}</p>
                                     <p><strong>Created:</strong> {{ order.created_at }}</p>
                                     {% if order.fulfilled_at %}
@@ -109,11 +114,13 @@
                                         <button type="submit" name="action" value="refunded">Refund</button>
                                     </form>
 
+                                    <br>
+
                                 </div>
                             </div>
-                        </li>
+                        </div>
                     {% endfor %}
-                </ul>
+                </div>
             {% else %}
                 <p>No other orders yet.</p>
             {% endif %}

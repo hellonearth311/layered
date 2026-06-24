@@ -519,8 +519,10 @@ def update_order_status(request, order_id):
 
     if order.status == Order.OrderStatus.FULFILLED:
         order.fulfilled_at = timezone.now()
+        order.fulfiller = request.user
     elif order.status == Order.OrderStatus.REFUNDED:
         amount_to_refund = order.item.cost * order.quantity
+        order.fulfiller = request.user
         with transaction.atomic():
             profile = Profile.objects.select_for_update().get(user=order.owner)
 
@@ -528,7 +530,7 @@ def update_order_status(request, order_id):
             profile.save()
     else:
         order.fulfilled_at = None
-    order.save(update_fields=["status", "fulfilled_at"])
+    order.save(update_fields=["status", "fulfilled_at", "fulfiller"])
 
     messages.success(request, f"Order #{order.id} updated to {order.get_status_display().lower()}.")
     return redirect("fulfillment_dash")

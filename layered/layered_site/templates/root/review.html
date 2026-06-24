@@ -27,17 +27,20 @@
         {% endif %}
     </nav>
     <div class="content">
+        {% include "root/_messages.html" %}
         <h1>Review Dash</h1>
         <h3>(T1) Review em projects!!</h3>
         {% for ship in ships %}
-            <li class="project-card" data-project-id="{{ ship.project.id }}">
+            <div class="project-card" data-project-id="{{ ship.project.id }}">
                 <div class="card-row">
                     <div class="card-main">
                         <strong><a href="{% url 'review_project' ship.id %}">{{ ship.project.title }}</a></strong>
                         <p>{{ ship.project.description }}</p>
+                        <p>by {{ ship.project.owner.hackclub_profile.slack_username }}</p>
                     </div>
                 </div>
-            </li>    
+            </div>
+            <br>
         {% endfor%}
     </div>
 </body>
