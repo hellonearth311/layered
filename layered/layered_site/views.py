@@ -57,6 +57,47 @@ def is_valid_stl_url(url):
     except Exception:
         return False
 
+def get_model_info(model_id: str) -> dict:
+    PRINTABLES_GRAPHQL_URL = os.environ['PRINTABLES_GRAPHQL_URL']
+    QUERY = """
+    query GetModelInfo($id: ID!) {
+    print(id: $id) {
+        id
+        name
+        slug
+        makesCount
+        license {
+        id
+        name
+        disallowRemixing
+        }
+    }
+    }
+    """
+
+    payload = {
+        "operationName": "GetModelInfo",
+        "variables": {"id": model_id},
+        "query": QUERY,
+    }
+
+    headers = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Origin": "https://www.printables.com",
+        "Referer": "https://www.printables.com/",
+        "User-Agent": "Mozilla/5.0 (compatible; Layered/1.0)",
+    }
+    response = requests.post(PRINTABLES_GRAPHQL_URL, json=payload, headers=headers)
+    response.raise_for_status()
+
+    data = response.json()
+
+    if "errors" in data:
+        raise ValueError(f"GraphQL API errors: {data['errors']}")
+    
+    return data["data"]["print"]
+
 # setting up auth
 oauth = OAuth()
 
@@ -275,6 +316,11 @@ def project_detail(request, project_id):
     else:
         can_ship = True
         ship_disabled_reason = ""
+    
+    if project.printablesUrl:
+        printablesData = get_model_info(project.printablesUrl.split('/model/')[1].split('-')[0])
+    else:
+        printablesData = []
 
     return render(request, "layered_site/project_detail.html", {
         "project": project,
@@ -285,6 +331,7 @@ def project_detail(request, project_id):
         "time_spent": time_spent,
         "can_ship": can_ship,
         "ship_disabled_reason": ship_disabled_reason,
+        "printablesData": printablesData,
     })
 
 @login_required
@@ -683,8 +730,12 @@ def review_project(request, ship_id):
     ship = get_object_or_404(Ship, id=ship_id)
     journals = ship.project.journals.order_by('-id')
 
+    hasMake = bool(get_model_info(ship.project.printablesUrl.split('/model/')[1].split('-')[0])["makesCount"])
+
     return render(request, "root/review_project.html", {
-        "ship": ship
+        "ship": ship,
+        "journals": journals,
+        "hasMake": hasMake,
     })
 
 @require_POST
