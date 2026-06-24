@@ -318,9 +318,12 @@ def project_detail(request, project_id):
         ship_disabled_reason = ""
     
     if project.printablesUrl:
-        printablesData = get_model_info(project.printablesUrl.split('/model/')[1].split('-')[0])
+        try:
+            printablesData = get_model_info(project.printablesUrl.split('/model/')[1].split('-')[0])
+        except:
+            printablesData = {"makesCount": 0}
     else:
-        printablesData = []
+        printablesData = {"makesCount": 0}
 
     return render(request, "layered_site/project_detail.html", {
         "project": project,
@@ -729,8 +732,10 @@ def review_project(request, ship_id):
 
     ship = get_object_or_404(Ship, id=ship_id)
     journals = ship.project.journals.order_by('-id')
-
-    hasMake = bool(get_model_info(ship.project.printablesUrl.split('/model/')[1].split('-')[0])["makesCount"])
+    try:
+        hasMake = bool(get_model_info(ship.project.printablesUrl.split('/model/')[1].split('-')[0])["makesCount"])
+    except:
+        hasMake = False
 
     return render(request, "root/review_project.html", {
         "ship": ship,
