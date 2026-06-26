@@ -45,16 +45,17 @@
         <h2>Printer actions</h2>
         {% for print in ship.prints.all %}
             <h3>Print {{ forloop.counter }}</h3>
-            <p><strong>Decision:</strong> {{ print.get_decision_display }} at {{ print.claimed_time }} by {{ print.printer.hackclub_profile.slack_username }}</p>
+        {% if print.finished_time %}
+            <p><strong>Action:</strong> {{ print.get_decision_display }} at {{ print.finished_time }} by {{ print.printer.hackclub_profile.slack_username }}</p>
+        {% else %}
+            <p><strong>Action:</strong> {{ print.get_decision_display }} at {{ print.claimed_time }} by {{ print.printer.hackclub_profile.slack_username }}</p>
+        {% endif %}
             <p><strong>Weight:</strong> {{ print.weight }}</p>
             <p><strong>Feedback:</strong> {{ print.feedback }}</p>
             <p><strong>Internal:</strong> {{ print.internal_notes }}</p>
-            {% if print.image_url %}
-                <p><strong>Image:</strong> <a href="{{ print.image_url }}" target="_blank" rel="noreferrer">{{ print.image_url }}</a></p>
-            {% endif %}
-        {% empty %}
-            <p>No printer actions yet.</p>
-        {% endfor %}
+        {% if print.image_url %}
+            <p><strong>Image:</strong> <a href="{{ print.image_url }}" target="_blank" rel="noreferrer">{{ print.image_url }}</a></p>
+        {% endif %}
         <h2>T2 actions</h2>
         {% for t2_review in ship.t2_reviews.all %}
             <h3>Review {{ forloop.counter }}</h3>
