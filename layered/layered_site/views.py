@@ -652,6 +652,23 @@ def unclaim_print(request, ship_id):
     return redirect("print_dash")
 
 @staff_member_required
+def print_project(request, ship_id):
+    user = request.user
+    if not any(user.has_perm(p) for p in ["layered_site.printer", "layered_site.organizer"]):
+        raise PermissionDenied
+    
+    ship = get_object_or_404(Ship, id=ship_id)
+    if ship.prints.exists():
+        current_print = ship.prints.all().order_by("-id").first()
+    else:
+        current_print = None
+
+    return render(request, "root/print_project.html", {
+        "current_print": current_print,
+        "ship": ship
+    })
+
+@staff_member_required
 @require_POST
 def print_decision(request, ship_id):
     user = request.user
