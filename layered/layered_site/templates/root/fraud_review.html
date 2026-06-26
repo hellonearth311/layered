@@ -31,14 +31,14 @@
         <h1>Fraud Review Dash</h1>
         <h3>(T3) Review em projects!!</h3>
         {% for ship in ships %}
-            <li class="project-card" data-project-id="{{ ship.project.id }}">
+            <div class="project-card" data-project-id="{{ ship.project.id }}">
                 <div class="card-row">
                     <div class="card-main">
-                        <strong>{{ ship.project.title }}</strong>
+                        <a href="{% url 'fraud_review_project' ship.id %}"><strong>{{ ship.project.title }}</strong></a>
                         <p>{{ ship.project.description }}</p>
                     </div>
                 </div>
-            </li>    
+            </div>    
         {% endfor%}
     </div>
 </body>

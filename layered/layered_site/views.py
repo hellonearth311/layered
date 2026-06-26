@@ -891,6 +891,17 @@ def fraud_review_dash(request):
         "ships": ships
     })
 
+@staff_member_required
+def fraud_review_project(request, ship_id):
+    user = request.user
+    if not any(user.has_perm(perm) for perm in ["layered_site.organizer", "layered_site.t3_review"]):
+        raise PermissionDenied
+
+    ship = get_object_or_404(Ship, id=ship_id)
+    return render(request, "root/fraud_review_project.html", {
+        "ship": ship
+    })
+
 @require_POST
 @staff_member_required
 def t3_decision(request, ship_id):
@@ -944,7 +955,7 @@ def t3_decision(request, ship_id):
     )
 
     messages.success(request, f"good job. you did it right. i'm not complimenting you go lose some weight fattie. (project: {ship.project.title} with decision {decision})")
-    return redirect("fraud_review")
+    return redirect("fraud_review_dash")
 
 @staff_member_required
 @require_POST

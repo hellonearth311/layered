@@ -71,39 +71,24 @@
         {% endfor %}
 
         <h1>Review</h1>
-        <form action="{% url 't2_decision' ship.id %}" method="POST">
+        <form action="{% url 't3_decision' ship.id %}" method="POST">
             {% csrf_token %}
-            <select name="decision" id="decision_select" required>
-                <option value="" disabled selected>Decision</option>
-                <option value="A">Approve</option>
-                <option value="P">Return to Printers</option>
+            <input type="text" name="internal_notes" placeholder="Internal Notes" style="width: 250px;" required>
+            <br>
+            <input type="text" name="payout_time" placeholder="Payout Time (minutes)" required>
+            <input type="text" name="airtable_time" placeholder="Airtable Time (minutes)" required>
+            <br>
+            <br>
+            <select id="decision" name="decision">
                 <option value="T1">Return to T1</option>
+                <option value="P">Return to Printers</option>
+                <option value="T2">Return to T2</option>
+                <option value="A">Approve</option>
             </select>
             <br>
-            <input type="text" name="feedback" placeholder="Feedback (100 characters, public)" maxlength="100" style="width: 300px;" required>
             <br>
-            <input type="text" name="justification" id="justification_input" placeholder="Airtable Justification (400 characters, private)" maxlength="400" style="width: 300px;">
-            <br>
-            <input type="number" name="deductions" placeholder="Deductions (minutes)" min="0" style="width: 145px;">
-            <br>
-            <button type="submit" id="submit_btn">Submit</button>
+            <button type="submit" id="submitButton">Submit</button>
         </form>
     </div>
-
-    <script>
-        const decisionSelect = document.getElementById('decision_select');
-        const justificationInput = document.getElementById('justification_input');
-        const submitBtn = document.getElementById('submit_btn');
-
-        decisionSelect.addEventListener('change', function () {
-            if (this.value === 'A') {
-                justificationInput.placeholder = 'Airtable Justification (400 characters, private)';
-                submitBtn.textContent = 'Approve';
-            } else {
-                justificationInput.placeholder = 'Internal Notes';
-                submitBtn.textContent = this.value === 'P' ? 'Return to Printers' : 'Return to T1';
-            }
-        });
-    </script>
 </body>
 </html>
