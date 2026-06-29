@@ -546,6 +546,10 @@ def ship_project(request, project_id):
         return redirect("projects")
     if not project.journals.exists():
         messages.error(request, "your project must have at least one journal to be shipped")
+        return redirect("projects")
+    if (project.journals.aggregate(total=Sum('time_spent'))['total'] or 0) <= 180:
+        messages.error(request, "you must have atleast 3 hours of logged time before you can ship!")
+        return redirect("projects")
 
     latest_ship = project.ships.order_by('-created_at').first()
     if latest_ship and latest_ship.status not in (Ship.ShipStatus.FINALIZED, Ship.ShipStatus.REJECTED):
