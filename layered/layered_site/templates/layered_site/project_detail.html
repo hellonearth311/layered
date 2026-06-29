@@ -66,13 +66,15 @@
             {% if project.owner == user %}
                 <form action="{% url 'create_journal' project.id %}" method="post" enctype="multipart/form-data">
                     {% csrf_token %}
-                    <input type="text" name="title" placeholder="Title">
-                    <input type="text" name="time_spent" placeholder="Time Spent (minutes)">
+                    <input type="text" name="title" placeholder="Title" required>
+                    <input type="text" name="time_spent" placeholder="Time Spent (minutes)" requried>
+                    <p>Characters: <span id="character_count">0</span> (min 200, max 2000)</p>
                     <textarea
                         maxlength="2000"
                         placeholder="What did you do?"
                         style="display:block; width: 500px; height: 500px; text-align: left; resize: none; padding: 10px; box-sizing: border-box; margin-bottom: 20px;"
                         name="text"
+                        id="journal_content"
                         required
                     ></textarea>
                     <label for="image">Upload a photo of what you did!</label>
@@ -112,5 +114,22 @@
             <p>{{ profile.layers }} layers</p>
         </div>
     </div>
+    <script>
+        const textArea = document.getElementById("journal_content");
+        const countDisplay = document.getElementById("character_count");
+
+        countDisplay.style.color = "red"
+
+        textArea.addEventListener('input', () => {
+            const currentLength = textArea.value.length;
+            countDisplay.textContent = currentLength;
+
+            if (currentLength >= 200 && currentLength <= 2000) {
+                countDisplay.style.color = "green"
+            } else {
+                countDisplay.style.color = "red"
+            }
+        });
+    </script>
 </body>
 </html>

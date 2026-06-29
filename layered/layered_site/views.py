@@ -472,10 +472,10 @@ def create_journal(request, project_id):
     try:
         time_spent = int(time_spent_raw)
 
-        if time_spent > 240:
+        if time_spent >= 240:
             messages.error(request, "Time spent must not be greater than 4 hours!")
             return redirect("project_detail", project_id=project_id)
-        if time_spent < 30:
+        if time_spent <= 30:
             messages.error(request, "You must spend at least 30 minutes on your journal entry!")
             return redirect("project_detail", project_id=project_id)
     except ValueError:
@@ -484,6 +484,13 @@ def create_journal(request, project_id):
     
     title = request.POST.get("title", "").strip()
     text = request.POST.get("text", "").strip()
+
+    if len(text) <= 200:
+        messages.error(request, "Journals must have at least 200 characters!")
+        return redirect("project_detail", project_id=project_id)
+    elif len(text) >= 2000:
+        messages.error(request, "Journals must not be greater than 2000 characters!")
+        return redirect("project_detail", project_id=project_id)
 
     image_file = request.FILES.get("image")
     model_file = request.FILES.get("STL")
