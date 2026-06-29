@@ -472,7 +472,7 @@ def create_journal(request, project_id):
     try:
         time_spent = int(time_spent_raw)
 
-        if time_spent >= 240:
+        if time_spent > 240:
             messages.error(request, "Time spent must not be greater than 4 hours!")
             return redirect("project_detail", project_id=project_id)
         if time_spent <= 30:
