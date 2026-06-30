@@ -207,3 +207,10 @@ body {
     width: 96px;
     height: auto;
 }
+
+#journal-content {
+    max-width: 45ch; 
+    overflow-wrap: break-word; 
+    word-wrap: break-word; 
+    white-space: pre-wrap;
+}

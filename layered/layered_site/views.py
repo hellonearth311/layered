@@ -395,6 +395,35 @@ def project_detail(request, project_id):
     })
 
 @login_required
+def project_detail_explore(request, project_id):
+    project = get_object_or_404(Project, id=project_id)
+    user = request.user
+    profile = user.hackclub_profile
+    ships = project.ships.order_by("-created_at")
+    journals = project.journals.order_by("-id")
+
+    total_time = journals.aggregate(total=Sum('time_spent'))['total'] or 0
+    time_spent = f"{floor(total_time / 60)}h {total_time % 60}m"
+
+    if project.printablesUrl:
+        try:
+            printablesData = get_model_info(project.printablesUrl.split('/model/')[1].split('-')[0])
+        except:
+            printablesData = {"makesCount": 0}
+    else:
+        printablesData = {"makesCount": 0}
+
+    return render(request, "layered_site/project_detail_explore.html", {
+        "project": project,
+        "user": user,
+        "profile": profile,
+        "ships": ships,
+        "journals": journals,
+        "time_spent": time_spent,
+        "printablesData": printablesData,
+    })
+
+@login_required
 def item_detail(request, item_id):
     item = get_object_or_404(Item, id=item_id)
     profile = request.user.hackclub_profile
