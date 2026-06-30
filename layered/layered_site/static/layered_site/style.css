@@ -209,8 +209,35 @@ body {
 }
 
 #journal-content {
-    max-width: 45ch; 
-    overflow-wrap: break-word; 
-    word-wrap: break-word; 
+    max-width: 45ch;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
     white-space: pre-wrap;
+}
+
+.journal-media {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 16px;
+}
+
+.journal-image {
+    width: 400px;
+    height: 400px;
+    object-fit: contain;
+    border-radius: 5px;
+}
+
+.stl-viewer {
+    width: 400px;
+    height: 400px;
+    border-radius: 5px;
+    background-color: #f0f0f0;
+    overflow: hidden;
+    cursor: grab;
+}
+
+.stl-viewer canvas {
+    display: block;
 }
