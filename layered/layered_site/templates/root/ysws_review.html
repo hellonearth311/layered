@@ -41,6 +41,7 @@
                         <a href="{% url 'ysws_review_project' ship.id %}"><strong>{{ ship.project.title }}</strong></a>
                         <p>{{ ship.project.description }}</p>
                         <p>by {{ ship.project.owner.hackclub_profile.slack_username }}</p>
+                        <p>type: {{ ship.project.editor_name }}</p>
                     </div>
                 </div>
             </div>

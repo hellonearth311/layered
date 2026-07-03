@@ -37,6 +37,9 @@
                 </a></p>
                 <p>{{ printablesData.makesCount }} makes on Printables</p>
             {% endif %}
+            {% if project.editor_model_url %}
+                <p><a href="{{ project.editor_model_url }}" target="_blank" rel="noreferrer noopener">Download editor model</a> ({{ project.editor_name }})</p>
+            {% endif %}
             <br>
 
         <div class="journal-section">

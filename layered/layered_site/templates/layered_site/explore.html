@@ -30,6 +30,9 @@
                                         {% if project.printablesUrl %}
                                             <a href="{{ project.printablesUrl }}" target="_blank" rel="noreferrer">Printables link</a>
                                         {% endif %}
+                                        {% if project.editor_model_url %}
+                                            <a href="{{ project.editor_model_url }}" target="_blank" rel="noreferrer">Download editor model</a> ({{ project.editor_name }})
+                                        {% endif %}
                                     </div>
                                 </div>
                             </div>

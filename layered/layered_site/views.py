@@ -15,7 +15,10 @@ from django.conf import settings
 from django.core.files.storage import default_storage
 from django.core.paginator import Paginator
 
-from .models import Profile, Project, Item, Order, Ship, T1, T2, T3, Print, Journal, AuditLog
+from .models import (
+    Profile, Project, Item, Order, Ship, T1, T2, T3, Print, Journal, AuditLog,
+    ALLOWED_EDITORS, EDITOR_FILE_EXTENSIONS, detect_editor_from_filename, detect_editor_from_link,
+)
 
 from urllib.parse import urlparse
 from slack_sdk import WebClient
@@ -326,6 +329,43 @@ def edit_project(request, project_id):
 
 @login_required
 @require_POST
+def update_editor_model(request, project_id):
+    project = get_object_or_404(request.user.projects, id=project_id, deleted=False)
+
+    if project.locked:
+        messages.error(request, "You cannot edit a locked project.")
+        return redirect("project_detail", project_id=project_id)
+
+    editor_model_file = request.FILES.get("editor_model_file")
+    editor_model_link = request.POST.get("editor_model_link", "").strip()
+
+    if editor_model_file:
+        if not detect_editor_from_filename(editor_model_file.name):
+            messages.error(request, f"Unsupported editor model file. Supported editors: {', '.join(ALLOWED_EDITORS)}.")
+            return redirect("project_detail", project_id=project_id)
+        editor_model_key = default_storage.save(
+            f"editor_models/{os.path.basename(editor_model_file.name)}", editor_model_file
+        )
+        project.editor_model_url = default_storage.url(editor_model_key)
+    elif editor_model_link:
+        if not editor_model_link.lower().startswith(("http://", "https://")):
+            messages.error(request, "Editor model link must be a valid URL.")
+            return redirect("project_detail", project_id=project_id)
+        if not detect_editor_from_link(editor_model_link):
+            messages.error(request, f"Unsupported editor model link. Supported editors: {', '.join(ALLOWED_EDITORS)}.")
+            return redirect("project_detail", project_id=project_id)
+        project.editor_model_url = editor_model_link
+    else:
+        messages.error(request, "Upload a file or provide a link for the editor model.")
+        return redirect("project_detail", project_id=project_id)
+
+    project.save()
+    messages.success(request, "Editor model updated successfully.")
+    return redirect("project_detail", project_id=project_id)
+
+
+@login_required
+@require_POST
 def delete_project(request, project_id):
     project = get_object_or_404(request.user.projects, id=project_id)
 
@@ -354,6 +394,9 @@ def project_detail(request, project_id):
     elif not is_valid_printables_url(project.printablesUrl):
         can_ship = False
         ship_disabled_reason = "You need a valid Printables URL before you can ship."
+    elif not project.editor_model_url:
+        can_ship = False
+        ship_disabled_reason = "You need to upload or link your editor model before you can ship."
     elif ship_pending:
         can_ship = False
         ship_disabled_reason = "Your most recent ship must be finalized or rejected before you can reship."
@@ -398,6 +441,8 @@ def project_detail(request, project_id):
         "can_ship": can_ship,
         "ship_disabled_reason": ship_disabled_reason,
         "printablesData": printablesData,
+        "allowed_editors": ALLOWED_EDITORS,
+        "allowed_editor_extensions": ",".join(EDITOR_FILE_EXTENSIONS.keys()),
     })
 
 @login_required
@@ -575,6 +620,9 @@ def ship_project(request, project_id):
         return redirect("projects")
     if not is_valid_printables_url(project.printablesUrl):
         messages.error(request, "you need a printables URL to ship!")
+        return redirect("projects")
+    if not project.editor_model_url:
+        messages.error(request, "you need to upload or link your editor model before you can ship!")
         return redirect("projects")
     if not project.description:
         messages.error(request, "your project must have a description before you can ship!")

@@ -54,6 +54,8 @@
                     <div class="card-main">
                         <strong><a href="{% url 'print_project' ship.id %}">{{ ship.project.title }}</a></strong>
                         <p>{{ ship.project.description }}</p>
+                        <p>by {{ ship.project.owner.hackclub_profile.slack_username }}</p>
+                        <p>type: {{ ship.project.editor_name }}</p>
                     </div>
                 </div>
             </div>

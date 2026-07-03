@@ -1,7 +1,61 @@
+import os
+from urllib.parse import urlparse
+
 from django.db import models
 from django.contrib.auth.models import User
 from django.conf import settings
 from django.utils import timezone
+
+ALLOWED_EDITORS = [
+	"Fusion 360",
+	"Onshape",
+	"Shapr3D",
+	"Solidworks",
+	"FreeCAD",
+	"OpenSCAD",
+	"Blender",
+	"Solvespace",
+]
+
+EDITOR_FILE_EXTENSIONS = {
+	".f3d": "Fusion 360",
+	".f3z": "Fusion 360",
+	".sldprt": "Solidworks",
+	".sldasm": "Solidworks",
+	".slddrw": "Solidworks",
+	".fcstd": "FreeCAD",
+	".scad": "OpenSCAD",
+	".blend": "Blender",
+	".slvs": "Solvespace",
+	".shapr3d": "Shapr3D",
+	".shapr": "Shapr3D",
+}
+
+EDITOR_LINK_DOMAINS = {
+	"onshape.com": "Onshape",
+	"a360.co": "Fusion 360",
+	"autodesk360.com": "Fusion 360",
+	"shapr3d.com": "Shapr3D",
+}
+
+def detect_editor_from_filename(filename):
+	ext = os.path.splitext(filename)[1].lower()
+	return EDITOR_FILE_EXTENSIONS.get(ext)
+
+def detect_editor_from_link(url):
+	host = (urlparse(url).netloc or "").lower()
+	for domain, editor in EDITOR_LINK_DOMAINS.items():
+		if host == domain or host.endswith("." + domain):
+			return editor
+	return None
+
+def detect_editor(value):
+	if not value:
+		return None
+	ext = os.path.splitext(urlparse(value).path)[1].lower()
+	if ext in EDITOR_FILE_EXTENSIONS:
+		return EDITOR_FILE_EXTENSIONS[ext]
+	return detect_editor_from_link(value)
 
 
 # auth model
@@ -26,12 +80,17 @@ class Project(models.Model):
 	title = models.CharField(max_length=60, default="My Project")
 	description = models.CharField(max_length=1000)
 	printablesUrl = models.CharField(max_length=150, blank=True)
+	editor_model_url = models.CharField(max_length=2048, blank=True)
 	created_at = models.DateTimeField(auto_now_add=True)
 	locked = models.BooleanField(default=False)
 	deleted = models.BooleanField(default=False)
 
 	def __str__(self):
 		return f"{self.id}: {self.title}"
+
+	@property
+	def editor_name(self):
+		return detect_editor(self.editor_model_url)
 	
 class Ship(models.Model):
 	project = models.ForeignKey(

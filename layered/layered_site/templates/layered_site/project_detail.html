@@ -37,10 +37,26 @@
                 </a></p>
                 <p>{{ printablesData.makesCount }} makes on Printables</p>
             {% endif %}
+            {% if project.editor_model_url %}
+                <p><a href="{{ project.editor_model_url }}" target="_blank" rel="noreferrer noopener">Download editor model</a> ({{ project.editor_name }})</p>
+            {% endif %}
             {% if project.locked %}
                 <p style="color: red; font-weight: bold;">Locked</p>
             {% endif %}
             {% if project.owner == user %}
+                {% if not project.locked %}
+                    <form action="{% url 'update_editor_model' project.id %}" method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <label for="editor_model_file">Upload your editor model file</label>
+                        <input type="file" id="editor_model_file" name="editor_model_file" accept="{{ allowed_editor_extensions }}">
+                        <br>
+                        <label for="editor_model_link">Or paste a link to it</label>
+                        <input type="url" id="editor_model_link" name="editor_model_link" placeholder="https://...">
+                        <br>
+                        <button type="submit">Save editor model</button>
+                    </form>
+                {% endif %}
+                <br>
                 {% if can_ship %}
                     <form action="{% url 'ship_project' project.id %}" method="post">
                         {% csrf_token %}
