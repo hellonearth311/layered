@@ -101,11 +101,13 @@
         {% endfor %}
 
         <h1>Printing Area</h1>
-        {% if not current_print or current_print.unclaimed_time %}
+        {% if can_claim %}
             <form action="{% url 'claim_print' ship.id %}" method="POST">
                 {% csrf_token %}
                 <button type="submit">Claim Print</button>
             </form>
+        {% elif not current_print %}
+            <p>This ship is not currently available for printing.</p>
         {% elif current_print.finished_time %}
             <p>This print has already been printed.</p>
         {% elif current_print.printer == user %}

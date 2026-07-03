@@ -19,6 +19,7 @@ from .models import Profile, Project, Item, Order, Ship, T1, T2, T3, Print, Jour
 
 from urllib.parse import urlparse
 from slack_sdk import WebClient
+from slack_sdk.errors import SlackApiError
 from math import floor
 
 import os
@@ -27,7 +28,9 @@ import requests
 
 FORCE_REAUTH_COOKIE = "hca_force_reauth"
 PRINTABLES_URL_RE = re.compile(r"https:\/\/(?:www\.)?printables\.com(?:\/.*)?", re.IGNORECASE)
+slack_client = WebClient(token=os.environ["SLACK_TOKEN"])
 
+# helper functions
 def is_valid_printables_url(value):
     return bool(PRINTABLES_URL_RE.match(value))
 
@@ -138,6 +141,16 @@ def get_model_info(model_id: str) -> dict:
     
     return data["data"]["print"]
 
+def send_slack_dm(content, user):
+    try:
+        response = slack_client.chat_postMessage(
+            channel=user,
+            text=content
+        )
+        return True
+    except SlackApiError:
+        return False
+
 # setting up auth
 oauth = OAuth()
 
@@ -150,9 +163,6 @@ oauth.register(
         "scope": "openid profile email verification_status slack_id"
     }
 )
-
-# set up le slack
-slack_client = WebClient(token=os.environ["SLACK_TOKEN"])
 
 # auth views
 @require_POST
@@ -277,10 +287,6 @@ def create_project(request):
     if not description:
         messages.error(request, "Description is required")
         return redirect("projects")
-    
-    # if not is_valid_printables_url(printables_url):
-    #     messages.error(request, "Printables URL must be a valid https://printables.com/xyz URL.")
-    #     return redirect("projects")
 
     project = Project.objects.create(
         owner = request.user,
@@ -669,19 +675,17 @@ def update_order_status(request, order_id):
         messages.error(request, f"Order status is already { {'P': 'pending', 'D': 'denied', 'F': 'fulfilled', 'R': 'refunded'}.get(order.status) }!")
         return redirect("fulfillment_dash")
 
-    if order.status == Order.OrderStatus.FULFILLED:
-        order.fulfilled_at = timezone.now()
-        order.fulfiller = request.user
-    elif order.status == Order.OrderStatus.REFUNDED:
-        amount_to_refund = order.item.cost * order.quantity
-        order.fulfiller = request.user
+    order.fulfiller = request.user
+    amount_refunded = None
+
+    if order.status == Order.OrderStatus.REFUNDED:
+        amount_refunded = order.item.cost * order.quantity
         with transaction.atomic():
             profile = Profile.objects.select_for_update().get(user=order.owner)
-
-            profile.layers += amount_to_refund
+            profile.layers += amount_refunded
             profile.save()
     else:
-        order.fulfilled_at = None
+        order.fulfilled_at = timezone.now()
     order.save(update_fields=["status", "fulfilled_at", "fulfiller"])
 
     record_audit(request, "update_order_status", target=f"Order #{order.id}", metadata={
@@ -692,6 +696,16 @@ def update_order_status(request, order_id):
         "previous_status": prev_status,
         "new_status": order.status,
     })
+
+    owner_slack_id = order.owner.hackclub_profile.slack_id
+    if owner_slack_id:
+        dm_messages = {
+            Order.OrderStatus.FULFILLED: f"Your order for {order.quantity}x {order.item.name} has been fulfilled!",
+            Order.OrderStatus.DENIED: f"Your order for {order.quantity}x {order.item.name} was denied. Ask in #layered-help for more details.",
+            Order.OrderStatus.REFUNDED: f"Your order for {order.quantity}x {order.item.name} was refunded and {amount_refunded} layers have been added back to your balance.",
+            Order.OrderStatus.PENDING: f"Your order for {order.quantity}x {order.item.name} has been marked as pending again.",
+        }
+        send_slack_dm(dm_messages[order.status], owner_slack_id)
 
     messages.success(request, f"Order #{order.id} updated to {order.get_status_display().lower()}.")
     return redirect("fulfillment_dash")
@@ -740,6 +754,10 @@ def claim_print(request, ship_id):
         ship=ship
     )
 
+    owner_slack_id = ship.project.owner.hackclub_profile.slack_id
+    if owner_slack_id:
+        send_slack_dm(f"Your project <https://layered.hacklub.com/projects/{ship.project.id}|{ship.project.title}> is being printed!", owner_slack_id)
+
     record_audit(request, "claim_print", target=f"Ship #{ship.id} ({ship.project.title})", metadata={
         "ship_id": ship.id,
         "print_id": new_print.id,
@@ -776,6 +794,10 @@ def unclaim_print(request, ship_id):
     ship.status = Ship.ShipStatus.PRINT_QUEUE
     ship.save()
 
+    owner_slack_id = ship.project.owner.hackclub_profile.slack_id
+    if owner_slack_id:
+        send_slack_dm(f"Your project <https://layered.hacklub.com/projects/{ship.project.id}|{ship.project.title}> is no longer being printed!", owner_slack_id)
+
     record_audit(request, "unclaim_print", target=f"Ship #{ship.id} ({ship.project.title})", metadata={
         "ship_id": ship.id,
         "print_id": active_print.id,
@@ -802,7 +824,8 @@ def print_project(request, ship_id):
     return render(request, "root/print_project.html", {
         "current_print": current_print,
         "ship": ship,
-        "journals": journals
+        "journals": journals,
+        "can_claim": ship.status == Ship.ShipStatus.PRINT_QUEUE,
     })
 
 @staff_member_required
@@ -848,16 +871,21 @@ def print_decision(request, ship_id):
     active_print.decision = decision
     active_print.image_url = image_url
     active_print.save()
-
-    if decision == Print.Decision.RETURN_T1:
-        ship.status = Ship.ShipStatus.T1_QUEUE
-    elif decision == Print.Decision.APPROVE:
-        ship.status = Ship.ShipStatus.T2_QUEUE
-    else:
-        messages.error(request, f"Invalid decision (got: {decision})")
-        return redirect("print_dash")
+    
+    match decision:
+        case Print.Decision.RETURN_T1:
+            ship.status = Ship.ShipStatus.T1_QUEUE
+        case Print.Decision.APPROVE:
+            ship.status = Ship.ShipStatus.T2_QUEUE
+        case _:
+            messages.error(request, f"Invalid decision (got: {decision})")
+            return redirect("print_dash")
 
     ship.save()
+
+    owner_slack_id = ship.project.owner.hackclub_profile.slack_id
+    if owner_slack_id:
+        send_slack_dm(f"Your project <https://layered.hacklub.com/projects/{ship.project.id}|{ship.project.title}> has been printed and {"sent back to T1" if decision == Print.Decision.RETURN_T1 else "approved"}! Here's what they said about it: _{feedback}_", owner_slack_id)
 
     record_audit(request, "print_decision", target=f"Ship #{ship.id} ({ship.project.title})", metadata={
         "ship_id": ship.id,
@@ -942,6 +970,10 @@ def t1_decision(request, ship_id):
         approved=approved
     )
 
+    owner_slack_id = ship.project.owner.hackclub_profile.slack_id
+    if owner_slack_id:
+        send_slack_dm(f"Your project <https://layered.hacklub.com/projects/{ship.project.id}|{ship.project.title}> has been T1 reviewed and {"approved" if approved else "rejected"}! Here's what they said about it: _{feedback}_", owner_slack_id)
+
     record_audit(request, "t1_decision", target=f"Ship #{ship.id} ({ship.project.title})", metadata={
         "ship_id": ship.id,
         "t1_id": t1.id,
@@ -1000,16 +1032,24 @@ def t2_decision(request, ship_id):
 
     feedback = request.POST.get("feedback", "").strip()
     justification = request.POST.get("justification", "").strip()
-
-    if decision == T2.Decision.APPROVE:
-        ship.status = Ship.ShipStatus.T3_QUEUE
-    elif decision == T2.Decision.RETURN_PRINT:
-        ship.status = Ship.ShipStatus.PRINT_QUEUE
-    elif decision == T2.Decision.RETURN_T1:
-        ship.status = Ship.ShipStatus.T1_QUEUE
-    else:
-        messages.error(request, f"How did we get here? (decision: {decision})")
-        return redirect("ysws_review_dash")
+    owner_slack_id = ship.project.owner.hackclub_profile.slack_id
+    
+    match decision:
+        case T2.Decision.APPROVE:
+            ship.status = Ship.ShipStatus.T3_QUEUE
+            message = "approved"
+        case T2.Decision.RETURN_PRINT:
+            ship.status = Ship.ShipStatus.PRINT_QUEUE
+            message = "returned to the printers"
+        case T2.Decision.RETURN_T1:
+            ship.status = Ship.ShipStatus.T1_QUEUE
+            message = "returned to T1 reviewers"
+        case _:
+            messages.error(request, f"How did we get here? (decision: {decision})")
+            message = "(invalid decision, ask in <#C0AUP8VUU6T>)"
+            return redirect("ysws_review_dash")
+        
+    send_slack_dm(f"Your project <https://layered.hacklub.com/projects/{ship.project.id}|{ship.project.title}> has been T2 reviewed and {message}! Here's what they said about it: _{feedback}_", owner_slack_id)
     
     with transaction.atomic():
         ship.save()
@@ -1031,7 +1071,7 @@ def t2_decision(request, ship_id):
             journal.time_spent -= deduct
             journal.save(update_fields=['time_spent'])
             remaining -= deduct
-
+        
     record_audit(request, "t2_decision", target=f"Ship #{ship.id} ({ship.project.title})", metadata={
         "ship_id": ship.id,
         "t2_id": t2.id,
@@ -1082,22 +1122,29 @@ def t3_decision(request, ship_id):
     reviewer = request.user
     decision = request.POST.get("decision", "").strip()
     internal_notes = request.POST.get("internal_notes", "").strip()
+    
+    owner_slack_id = ship.project.owner.hackclub_profile.slack_id
 
-    if decision == T3.Decision.RETURN_T1:
-        ship.status = Ship.ShipStatus.T1_QUEUE
-    elif decision == T3.Decision.RETURN_PRINT:
-        ship.status = Ship.ShipStatus.PRINT_QUEUE
-    elif decision == T3.Decision.RETURN_T2:
-        ship.status = Ship.ShipStatus.T2_QUEUE
-    elif decision == T3.Decision.APPROVE:
-        ship.status = Ship.ShipStatus.FINALIZED
-
-        # remember to payout here
-    else:
-        messages.error(request, f"Invalid decision (received decision: {decision})")
-        return redirect("fraud_review_dash")
+    match decision:
+        case T3.Decision.RETURN_T1:
+            ship.status = Ship.ShipStatus.T1_QUEUE
+            message = "returned to T1 reviewers"
+        case T3.Decision.RETURN_T2:
+            ship.status = Ship.ShipStatus.T2_QUEUE
+            message = "returned to T2 reviewers"
+        case T3.Decision.RETURN_PRINT:
+            ship.status = Ship.ShipStatus.PRINT_QUEUE
+            message = "returned to printers"
+        case T3.Decision.APPROVE:
+            ship.status = Ship.ShipStatus.FINALIZED
+            # remember to payout here
+        case _:
+            messages.error(request, f"Invalid decision (received decision: {decision})")
+            return redirect("fraud_review_dash")
     
     ship.save()
+
+    send_slack_dm(f"Your project <https://layered.hacklub.com/projects/{ship.project.id}|{ship.project.title}> has been finalized!", owner_slack_id) if decision == T3.Decision.APPROVE else send_slack_dm(f"Your project <https://layered.hacklub.com/projects/{ship.project.id}|{ship.project.title}> has been {message}!", owner_slack_id)
     
     payout_time_raw = request.POST.get("payout_time", "0").strip()
     airtable_time_raw = request.POST.get("airtable_time", "0").strip()
