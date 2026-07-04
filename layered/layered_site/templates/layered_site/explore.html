@@ -1,54 +1,33 @@
-{% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Layered</title>
-    <link rel="stylesheet" href="{% static 'layered_site/style.css' %}">
-</head>
-<body class="page" id="explore-page">
-    <nav class="sidebar">
-        <a href="/dashboard">home</a>
-        <a href="/projects">projects</a>
-        <a href="/explore">explore</a>
-        <a href="/shop">shop</a>
-        {% if perms.layered_site.organizer or perms.layered_site.fulfillment or perms.layered_site.printer or perms.layered_site.t1_review or perms.layered_site.t2_review or perms.layered_site.t3_review %}
-            <a href="/root">admin</a>
-        {% endif %}
-    </nav>
-    <div class="content">
-        {% include "root/_messages.html" %}
-        <h1>Explore</h1>
-            {% if projects %}
-                    {% for project in projects %}
-                            {% if not project.deleted %}
-                            <div class="project-card" data-project-id="{{ project.id }}">
-                                <div class="card-row">
-                                    <div class="card-main">
-                                        <strong><a href="{% url 'project_detail_explore' project.id %}">{{ project.title }}</a></strong>
-                                        <p>{{ project.description }}</p>
-                                        {% if project.printablesUrl %}
-                                            <a href="{{ project.printablesUrl }}" target="_blank" rel="noreferrer">Printables link</a>
-                                        {% endif %}
-                                        {% if project.editor_model_url %}
-                                            <a href="{{ project.editor_model_url }}" target="_blank" rel="noreferrer">Download editor model</a> ({{ project.editor_name }})
-                                        {% endif %}
-                                    </div>
+{% extends "layered_site/_base.html" %}
+
+{% block page_id %}explore{% endblock %}
+{% block title %}Explore{% endblock %}
+
+{% block content %}
+<div class="content">
+    {% include "root/_messages.html" %}
+    <h1>Explore</h1>
+        {% if projects %}
+                {% for project in projects %}
+                        {% if not project.deleted %}
+                        <div class="project-card" data-project-id="{{ project.id }}">
+                            <div class="card-row">
+                                <div class="card-main">
+                                    <strong><a href="{% url 'project_detail_explore' project.id %}">{{ project.title }}</a></strong>
+                                    <p>{{ project.description }}</p>
+                                    {% if project.printablesUrl %}
+                                        <a href="{{ project.printablesUrl }}" target="_blank" rel="noreferrer">Printables link</a>
+                                    {% endif %}
+                                    {% if project.editor_model_url %}
+                                        <a href="{{ project.editor_model_url }}" target="_blank" rel="noreferrer">Download editor model</a> ({{ project.editor_name }})
+                                    {% endif %}
                                 </div>
                             </div>
-                            {% endif %}
-                        {% endfor %}
-            {% else %}
-                <p>No projects not made by you yet. Tell your friends to make some!</p>
-            {% endif %}
-
-        
-        <div class="profile">
-            <img src="{{ user.hackclub_profile.slack_pfp_url }}" id="pfp">
-            <p>{{ user.hackclub_profile.slack_username }}</p>
-            <p>{{ profile.layers }} layers</p>
-        </div>
-    </div>
-
-</body>
-</html>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+        {% else %}
+            <p>No projects not made by you yet. Tell your friends to make some!</p>
+        {% endif %}
+</div>
+{% endblock %}

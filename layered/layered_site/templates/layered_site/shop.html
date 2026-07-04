@@ -1,59 +1,40 @@
-{% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Layered</title>
-    <link rel="stylesheet" href="{% static 'layered_site/style.css' %}">
-</head>
-<body class="page" id="shop-page">
-    <nav class="sidebar">
-        <a href="/dashboard">home</a>
-        <a href="/projects">projects</a>
-        <a href="/explore">explore</a>
-        <a href="/shop">shop</a>
-        {% if perms.layered_site.organizer or perms.layered_site.fulfillment or perms.layered_site.printer or perms.layered_site.t1_review or perms.layered_site.t2_review or perms.layered_site.t3_review %}
-            <a href="/root">admin</a>
-        {% endif %}
-    </nav>
-    <div class="content">
-        {% include "root/_messages.html" %}
-        <h1>Shop</h1>
-        <section class="item-list">
-            <h3>Items</h3>
-            {% if items %}
-                <div>
-                    {% for item in items %}
-                        {% if not item.deleted %}
-                        <div class="item-card" data-item-id="{{ item.id }}">
-                            <div class="card-row">
-                                <div class="card-main">
-                                    <img src="{{ item.imageUrl }}" alt="{{ item.name }}" loading="lazy" style="max-width: 30%; max-height: 200px; height: auto;">
-                                    <br>
-                                    <strong><a href="{% url 'item_detail' item.id %}">{{ item.name }}</a></strong>
+{% extends "layered_site/_base.html" %}
 
-                                    <p>{{ item.description }}</p>
-                                    <p>{{ item.cost }} layers</p> 
-                                    <form action="{% url 'item_detail' item.id %}" method="get">
-                                        <button type="submit">Order</button>
-                                    </form>
+{% block page_id %}shop{% endblock %}
+{% block title %}Shop{% endblock %}
 
-                                </div>
+{% block content %}
+<div class="content">
+    {% include "root/_messages.html" %}
+    <h1>Shop</h1>
+    <section class="item-list">
+        <h3>Items</h3>
+        {% if items %}
+            <div>
+                {% for item in items %}
+                    {% if not item.deleted %}
+                    <div class="item-card" data-item-id="{{ item.id }}">
+                        <div class="card-row">
+                            <div class="card-main">
+                                <img src="{{ item.imageUrl }}" alt="{{ item.name }}" loading="lazy" style="max-width: 30%; max-height: 200px; height: auto;">
+                                <br>
+                                <strong>{{ item.name }}</strong>
+
+                                <p>{{ item.description }}</p>
+                                <p>{{ item.cost }} layers</p> 
+                                <form action="{% url 'item_detail' item.id %}" method="get">
+                                    <button type="submit">Order</button>
+                                </form>
+
                             </div>
                         </div>
-                        {% endif %}
-                    {% endfor %}
                     </div>
-            {% else %}
-                <p>No items in the shop yet! Check back later.</p>
-            {% endif %}
-        </section>
-        
-        <div class="profile">
-            <img src="{{ user.hackclub_profile.slack_pfp_url }}" id="pfp">
-            <p>{{ user.hackclub_profile.slack_username }}</p>
-            <p>{{ profile.layers }} layers</p>
-        </div>
-    </div>
-</body>
-</html>
+                    {% endif %}
+                {% endfor %}
+                </div>
+        {% else %}
+            <p>No items in the shop yet! Check back later.</p>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

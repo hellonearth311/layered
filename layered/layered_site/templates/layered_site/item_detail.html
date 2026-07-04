@@ -1,56 +1,37 @@
-{% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Layered</title>
-    <link rel="stylesheet" href="{% static 'layered_site/style.css' %}">
-</head>
-<body class="page" id="item_detail_page">
-    <nav class="sidebar">
-        <a href="/dashboard">home</a>
-        <a href="/projects">projects</a>
-        <a href="/explore">explore</a>
-        <a href="/shop">shop</a>
-        {% if perms.layered_site.organizer or perms.layered_site.fulfillment or perms.layered_site.printer or perms.layered_site.t1_review or perms.layered_site.t2_review or perms.layered_site.t3_review %}
-            <a href="/root">admin</a>
-        {% endif %}
-    </nav>
-    <div class="content">
-        {% include "root/_messages.html" %}
+{% extends "layered_site/_base.html" %}
 
-        <h1>{{ item.name }}</h1>
+{% block page_id %}item-detail{% endblock %}
+{% block title %}Item {{ item.name }}{% endblock %}
 
-        <p>{{ item.description }}</p>
-        <p>{{ item.cost }} layers</p>
+{% block content %}
+<div class="content">
+    {% include "root/_messages.html" %}
 
-        {% if item.imageUrl %}
-        <img src="{{ item.imageUrl }}" alt="{{ item.name }}" loading="lazy">
-        {% else %}
-        <p>No image available for this item yet.</p>
-        {% endif %}
+    <h1>{{ item.name }}</h1>
 
-        <p><a href="{% url 'shop' %}">Back to shop</a></p>
-        <form action="{% url 'order_item' item.id %}" method="post">
-            {% csrf_token %}
-            <label>
-                Quantity
-                <input name="quantity" type="number" min="1" value="1" required>
-            </label>
+    <p>{{ item.description }}</p>
+    <p>{{ item.cost }} layers</p>
 
-            <label>
-                Notes
-                <textarea name="user_notes" maxlength="100" placeholder="Optional order notes"></textarea>
-            </label>
+    {% if item.imageUrl %}
+    <img src="{{ item.imageUrl }}" alt="{{ item.name }}" loading="lazy">
+    {% else %}
+    <p>No image available for this item yet.</p>
+    {% endif %}
 
-            <button type="submit">Order</button>
-        </form>
+    <p><a href="{% url 'shop' %}">Back to shop</a></p>
+    <form action="{% url 'order_item' item.id %}" method="post">
+        {% csrf_token %}
+        <label>
+            Quantity
+            <input name="quantity" type="number" min="1" value="1" required>
+        </label>
 
-        <div class="profile">
-            <img src="{{ user.hackclub_profile.slack_pfp_url }}" id="pfp">
-            <p>{{ user.hackclub_profile.slack_username }}</p>
-            <p>{{ profile.layers }} layers</p>
-        </div>
-    </div>  
-</body>
-</html>
+        <label>
+            Notes
+            <textarea name="user_notes" maxlength="100" placeholder="Optional order notes"></textarea>
+        </label>
+
+        <button type="submit">Order</button>
+    </form>
+</div>  
+{% endblock %}

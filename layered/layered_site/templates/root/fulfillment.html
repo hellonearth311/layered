@@ -1,6 +1,7 @@
 {% extends 'root/_base_root.html' %}
 
 {% block page_id %}admin-fulfillment-page{% endblock %}
+{% block title %}Fulfillment{% endblock %}
 
 {% block content %}
 <div class="content">
@@ -95,9 +96,5 @@
             <p>No other orders yet.</p>
         {% endif %}
     </section>
-    <div class="profile">
-        <p>{{ user.get_full_name }}</p>
-        <p>{{ profile.layers }} layers</p>
-    </div>
 </div>
 {% endblock %}

@@ -1,79 +1,61 @@
+{% extends "layered_site/_base.html" %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Layered</title>
-    <link rel="stylesheet" href="{% static 'layered_site/style.css' %}">
-</head>
-<body class="page" id="project_detail_page">
-    <nav class="sidebar">
-        <a href="/dashboard">home</a>
-        <a href="/projects">projects</a>
-        <a href="/explore">explore</a>
-        <a href="/shop">shop</a>
-        {% if perms.layered_site.organizer or perms.layered_site.fulfillment or perms.layered_site.printer or perms.layered_site.t1_review or perms.layered_site.t2_review or perms.layered_site.t3_review %}
-            <a href="/root">admin</a>
-        {% endif %}
-    </nav>
-    <script type="importmap">
-        {
-            "imports": {
-                "three": "https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js",
-                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/"
-            }
-        }
-    </script>
-    <script type="module" src="{% static 'layered_site/stl_viewer.js' %}"></script>
-    <div class="content">
-        {% include "root/_messages.html" %}
-        <div class="project-info">
-            <h1>{{ project.title }}</h1>
-            <p>{{ project.description }}</p>
-            <p>{{ time_spent }}</p>
-            {% if project.printablesUrl %}
-                <p><a href="{{ project.printablesUrl }}" target="_blank" rel="noreferrer noopener">
-                    View on Printables
-                </a></p>
-                <p>{{ printablesData.makesCount }} makes on Printables</p>
-            {% endif %}
-            {% if project.editor_model_url %}
-                <p><a href="{{ project.editor_model_url }}" target="_blank" rel="noreferrer noopener">Download editor model</a> ({{ project.editor_name }})</p>
-            {% endif %}
-            <br>
 
-        <div class="journal-section">
-        <h2>Journal Entries</h2>
-            {% if journals %}
-                {% for journal in journals %}
-                    <div class="journal-card">
-                        <h3>{{ journal.title }}</h3>
-                        <p>{{ journal.time_spent }} minutes</p>
-                        <p id="journal-content">{{ journal.text }}</p>
-                        <div class="journal-media">
-                            {% if journal.image_url %}
-                                <img src="{{ journal.image_url }}" alt="{{ journal.title }}" class="journal-image">
-                            {% endif %}
-                            {% if journal.model_url %}
-                                <div class="stl-viewer" data-stl-url="{{ journal.model_url }}"></div>
-                            {% endif %}
-                        </div>
+{% block page_id %}project-detail-explore{% endblock %}
+{% block title %}View Project {{ project.title }}{% endblock %}
+
+{% block content %}
+<script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/"
+        }
+    }
+</script>
+<script type="module" src="{% static 'layered_site/stl_viewer.js' %}"></script>
+<div class="content">
+    {% include "root/_messages.html" %}
+    <div class="project-info">
+        <h1>{{ project.title }}</h1>
+        <p>{{ project.description }}</p>
+        <p>{{ time_spent }}</p>
+        {% if project.printablesUrl %}
+            <p><a href="{{ project.printablesUrl }}" target="_blank" rel="noreferrer noopener">
+                View on Printables
+            </a></p>
+            <p>{{ printablesData.makesCount }} makes on Printables</p>
+        {% endif %}
+        {% if project.editor_model_url %}
+            <p><a href="{{ project.editor_model_url }}" target="_blank" rel="noreferrer noopener">Download editor model</a> ({{ project.editor_name }})</p>
+        {% endif %}
+        <br>
+
+    <div class="journal-section">
+    <h2>Journal Entries</h2>
+        {% if journals %}
+            {% for journal in journals %}
+                <div class="journal-card">
+                    <h3>{{ journal.title }}</h3>
+                    <p>{{ journal.time_spent }} minutes</p>
+                    <p id="journal-content">{{ journal.text }}</p>
+                    <div class="journal-media">
+                        {% if journal.image_url %}
+                            <img src="{{ journal.image_url }}" alt="{{ journal.title }}" class="journal-image">
+                        {% endif %}
                         {% if journal.model_url %}
-                            <p><a href="{{ journal.model_url }}" target="_blank" rel="noreferrer noopener">Download STL</a></p>
+                            <div class="stl-viewer" data-stl-url="{{ journal.model_url }}"></div>
                         {% endif %}
                     </div>
-                {% endfor %}
-            {% else %}
-                <p>No journal entries yet!</p>
-            {% endif %}
-            <p><a href="{% url 'explore' %}">Back to explore</a></p>
-        </div>
-        
-        <div class="profile">
-            <img src="{{ user.hackclub_profile.slack_pfp_url }}" id="pfp">
-            <p>{{ user.hackclub_profile.slack_username }}</p>
-            <p>{{ profile.layers }} layers</p>
-        </div>
+                    {% if journal.model_url %}
+                        <p><a href="{{ journal.model_url }}" target="_blank" rel="noreferrer noopener">Download STL</a></p>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>No journal entries yet!</p>
+        {% endif %}
+        <p><a href="{% url 'explore' %}">Back to explore</a></p>
     </div>
-</body>
-</html>
+</div>
+{% endblock %}

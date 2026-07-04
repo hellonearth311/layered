@@ -1,45 +1,25 @@
-{% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Layered</title>
-    <link rel="stylesheet" href="{% static 'layered_site/style.css' %}">
-</head>
-<body class="page" id="dashboard-page">
-    <nav class="sidebar">
-        <a href="/dashboard">home</a>
-        <a href="/projects">projects</a>
-        <a href="/explore">explore</a>
-        <a href="/shop">shop</a>
-        {% if perms.layered_site.organizer or perms.layered_site.fulfillment or perms.layered_site.printer or perms.layered_site.t1_review or perms.layered_site.t2_review or perms.layered_site.t3_review %}
-            <a href="/root">admin</a>
-        {% endif %}
-    </nav>
-    <div class="content">
-        {% include "root/_messages.html" %}
-        <h1>waow it worked</h1>
-        <p>if u can see this it means hcauth worked yay</p>
-        <p>your email: {{ user.email }}</p>
-        <p>your name: {{ user.get_full_name }}</p>
-        <p>your verification status: {{ user.hackclub_profile.verification_status }}</p>
-        <p>your slack id: {{ user.hackclub_profile.slack_id }}</p>
-        <p>your slack username: {{ user.hackclub_profile.slack_username }}</p>
-        <br>
-        <p>your slack PFP (512x512px):</p>
-        <img src="{{ user.hackclub_profile.slack_pfp_url }}" style="height: 64; width: 64;">
+{% extends "layered_site/_base.html" %}
 
-        <form action="{% url 'logout' %}" method="post">
-            {% csrf_token %}    
-            <button id="logoutButton" type="submit">logout</button>
-        </form>
+{% block page_id %}dashboard{% endblock %}
+{% block title %}Dashboard{% endblock %}
 
-        <div class="profile">
-            <img src="{{ user.hackclub_profile.slack_pfp_url }}" id="pfp">
-            <p>{{ user.hackclub_profile.slack_username }}</p>
-            <p>{{ profile.layers }} layers</p>
-        </div>
-    </div>
+{% block content %}
+<div class="content">
+    {% include "root/_messages.html" %}
+    <h1>waow it worked</h1>
+    <p>if u can see this it means hcauth worked yay</p>
+    <p>your email: {{ user.email }}</p>
+    <p>your name: {{ user.get_full_name }}</p>
+    <p>your verification status: {{ user.hackclub_profile.verification_status }}</p>
+    <p>your slack id: {{ user.hackclub_profile.slack_id }}</p>
+    <p>your slack username: {{ user.hackclub_profile.slack_username }}</p>
+    <br>
+    <p>your slack PFP (512x512px):</p>
+    <img src="{{ user.hackclub_profile.slack_pfp_url }}" style="height: 64; width: 64;">
 
-</body>
-</html>
+    <form action="{% url 'logout' %}" method="post">
+        {% csrf_token %}    
+        <button id="logoutButton" type="submit">logout</button>
+    </form>
+</div>
+{% endblock %}
