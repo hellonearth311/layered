@@ -1,75 +1,46 @@
-{% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Layered Admin</title>
-    <link rel="stylesheet" href="{% static 'layered_site/style.css' %}">
-</head>
-<body class="page" id="admin-review-page">
-    <nav class="sidebar">
-        <a href="/root/">home</a>
-        {% if perms.layered_site.fulfillment or perms.layered_site.organizer %}
-            <a href="/root/shop">shop management</a>
-            <a href="/root/fulfillment">fulfillment</a>
-        {% endif %}
-        {% if perms.layered_site.printer or perms.layered_site.organizer %}
-            <a href="/root/print">print</a>
-        {% endif %}
-        {% if perms.layered_site.t1_review or perms.layered_site.organizer or perms.layered_site.t2_review or perms.layered_site.t3_review %}
-            <a href="/root/review">review</a>
-        {% endif %}
-        {% if perms.layered_site.t2_review or perms.layered_site.organizer or perms.layered_site.t3_review %}
-            <a href="/root/ysws_review">ysws review</a>
-        {% endif %}
-        {% if perms.layered_site.t3_review or perms.layered_site.organizer %}
-            <a href="/root/fraud_review">fraud review</a>
-        {% endif %}
-        {% if perms.layered_site.organizer %}
-            <a href="/root/audit_log">audit log</a>
-            <a href="/root/users">users</a>
-        {% endif %}
-        <a href="/dashboard">back home</a>
-    </nav>
-    <div class="content">
-        {% include "root/_messages.html" %}
-        <h1>Users</h1>
-        <h3>Manage Users</h3>
-        <table class="users-table">
-            <thead>
-                <tr>
-                    <th></th>
-                    <th>User ID</th>
-                    <th>Slack Username</th>
-                    <th>Slack ID</th>
-                    <th>Layers</th>
-                    <th>Groups</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for user in users %}
-                <tr data-user-id="{{ user.id }}">
-                    <td>
-                        {% if user.hackclub_profile.slack_pfp_url %}
-                        <img src="{{ user.hackclub_profile.slack_pfp_url }}" style="border-radius: 50%; width: 40px; height: 40px;">
-                        {% else %}
-                        <img src="{{ default_pfp_url }}" style="border-radius: 50%; width: 40px; height: 40px;">
-                        {% endif %}
-                    </td>
-                    <td>{{ user.id }}</td>
-                    <td>{{ user.hackclub_profile.slack_username|default:"not found" }}</td>
-                    <td>{{ user.hackclub_profile.slack_id|default:"not found" }}</td>
-                    <td>{{ user.hackclub_profile.layers|default:"0" }}</td>
-                    <td>{{ user.groups.all|join:", "|default:"no groups found" }}</td>
-                    <td>
-                        <a href="#" onclick="viewPrivateInfoPopup">view private info</a> |
-                        <a href="#" onclick="editUserPopup">edit user</a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</body>
-</html>
+{% extends 'root/_base_root.html' %}
+
+{% block page_id %}admin-users-page{% endblock %}
+
+{% block content %}
+<div class="content">
+    {% include "root/_messages.html" %}
+    <h1>Users</h1>
+    <h3>Manage Users</h3>
+    <table class="users-table">
+        <thead>
+            <tr>
+                <th></th>
+                <th>User ID</th>
+                <th>Slack Username</th>
+                <th>Slack ID</th>
+                <th>Layers</th>
+                <th>Groups</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+            <tr data-user-id="{{ user.id }}">
+                <td>
+                    {% if user.hackclub_profile.slack_pfp_url %}
+                    <img src="{{ user.hackclub_profile.slack_pfp_url }}" style="border-radius: 50%; width: 40px; height: 40px;">
+                    {% else %}
+                    <img src="{{ default_pfp_url }}" style="border-radius: 50%; width: 40px; height: 40px;">
+                    {% endif %}
+                </td>
+                <td>{{ user.id }}</td>
+                <td>{{ user.hackclub_profile.slack_username|default:"not found" }}</td>
+                <td>{{ user.hackclub_profile.slack_id|default:"not found" }}</td>
+                <td>{{ user.hackclub_profile.layers|default:"0" }}</td>
+                <td>{{ user.groups.all|join:", "|default:"no groups found" }}</td>
+                <td>
+                    <a href="#" onclick="viewPrivateInfoPopup">view private info</a> |
+                    <a href="#" onclick="editUserPopup">edit user</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

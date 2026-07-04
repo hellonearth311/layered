@@ -1,151 +1,123 @@
+{% extends 'root/_base_root.html'}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Layered Admin</title>
-    <link rel="stylesheet" href="{% static 'layered_site/style.css' %}">
-</head>
-<body class="page" id="admin-project-review-page">
-    <nav class="sidebar">
-        <a href="/root/">home</a>
-        {% if perms.layered_site.fulfillment or perms.layered_site.organizer %}
-            <a href="/root/shop">shop management</a>
-            <a href="/root/fulfillment">fulfillment</a>
-        {% endif %}
-        {% if perms.layered_site.printer or perms.layered_site.organizer %}
-            <a href="/root/print">print</a>
-        {% endif %}
-        {% if perms.layered_site.t1_review or perms.layered_site.organizer or perms.layered_site.t2_review or perms.layered_site.t3_review %}
-            <a href="/root/review">review</a>
-        {% endif %}
-        {% if perms.layered_site.t2_review or perms.layered_site.organizer or perms.layered_site.t3_review %}
-            <a href="/root/ysws_review">ysws review</a>
-        {% endif %}
-        {% if perms.layered_site.t3_review or perms.layered_site.organizer %}
-            <a href="/root/fraud_review">fraud review</a>
-        {% endif %}
-        {% if perms.layered_site.organizer %}
-            <a href="/root/audit_log">audit log</a>
-            <a href="/root/users">users</a>
-        {% endif %}
-        <a href="/dashboard">back home</a>
-    </nav>
-    <script type="importmap">
-        {
-            "imports": {
-                "three": "https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js",
-                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/"
-            }
+
+{% block page_id %}admin-project-print-page{% endblock %}
+
+{% block content %}
+<script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/"
         }
-    </script>
-    <script type="module" src="{% static 'layered_site/stl_viewer.js' %}"></script>
-    <div class="content">
-        {% include "root/_messages.html" %}
-        <h1>Print Project "{{ ship.project.title }}" by {{ ship.project.owner.hackclub_profile.slack_username }}</h1>
-        <p>{{ ship.project.description }}</p>
-        <a href="{{ ship.project.printablesUrl }}">View on Printables</a>
-        {% if ship.project.editor_model_url %}
-            <br>
-            <a href="{{ ship.project.editor_model_url }}" target="_blank" rel="noreferrer noopener">Download editor model</a> ({{ ship.project.editor_name }})
-        {% endif %}
-        {% for journal in journals %}
-            <div class="journal-card">
-                <h3>{{ journal.title }}</h3>
-                <p>{{ journal.time_spent }} minutes</p>
-                <p id="journal-content">{{ journal.text }}</p>
-                <div class="journal-media">
-                    {% if journal.image_url %}
-                        <img src="{{ journal.image_url }}" alt="{{ journal.title }}" class="journal-image">
-                    {% endif %}
-                    {% if journal.model_url %}
-                        <div class="stl-viewer" data-stl-url="{{ journal.model_url }}"></div>
-                    {% endif %}
-                </div>
+    }
+</script>
+<script type="module" src="{% static 'layered_site/stl_viewer.js' %}"></script>
+<div class="content">
+    {% include "root/_messages.html" %}
+    <h1>Print Project "{{ ship.project.title }}" by {{ ship.project.owner.hackclub_profile.slack_username }}</h1>
+    <p>{{ ship.project.description }}</p>
+    <a href="{{ ship.project.printablesUrl }}">View on Printables</a>
+    {% if ship.project.editor_model_url %}
+        <br>
+        <a href="{{ ship.project.editor_model_url }}" target="_blank" rel="noreferrer noopener">Download editor model</a> ({{ ship.project.editor_name }})
+    {% endif %}
+    {% for journal in journals %}
+        <div class="journal-card">
+            <h3>{{ journal.title }}</h3>
+            <p>{{ journal.time_spent }} minutes</p>
+            <p id="journal-content">{{ journal.text }}</p>
+            <div class="journal-media">
+                {% if journal.image_url %}
+                    <img src="{{ journal.image_url }}" alt="{{ journal.title }}" class="journal-image">
+                {% endif %}
                 {% if journal.model_url %}
-                    <p><a href="{{ journal.model_url }}" target="_blank" rel="noreferrer noopener">Download STL</a></p>
+                    <div class="stl-viewer" data-stl-url="{{ journal.model_url }}"></div>
                 {% endif %}
             </div>
-        {% endfor %}
-        <h2>T1 actions</h2>
-        {% for t1_review in ship.t1_reviews.all %}
-            <h3>Review {{ forloop.counter }}</h3>
-            <p><strong>Approved:</strong> {{ t1_review.approved }} at {{ t1_review.reviewed_at }} by {{ t1_review.reviewer.hackclub_profile.slack_username }}</p>
-            <p><strong>Feedback:</strong> {{ t1_review.feedback }}</p>
-            <p><strong>Internal:</strong> {{ t1_review.internal_notes }}</p>
-            <p><strong>Print:</strong> {{ t1_review.print }}</p>
-        {% empty %}
-            <p>No T1 reviews yet.</p>
-        {% endfor %}
-        <h2>Printer actions</h2>
-        {% for print in ship.prints.all %}
-            <h3>Print {{ forloop.counter }}</h3>
-            {% if print.finished_time %}
-            <p><strong>Action:</strong> {{ print.get_decision_display }} at {{ print.finished_time }} by {{ print.printer.hackclub_profile.slack_username }}</p>
-            {% else %}
-            <p><strong>Action:</strong> {{ print.get_decision_display }} at {{ print.claimed_time }} by {{ print.printer.hackclub_profile.slack_username }}</p>
+            {% if journal.model_url %}
+                <p><a href="{{ journal.model_url }}" target="_blank" rel="noreferrer noopener">Download STL</a></p>
             {% endif %}
-            <p><strong>Weight:</strong> {{ print.weight }}</p>
-            <p><strong>Feedback:</strong> {{ print.feedback }}</p>
-            <p><strong>Internal:</strong> {{ print.internal_notes }}</p>
-            {% if print.image_url %}
-                <p><strong>Image:</strong> <a href="{{ print.image_url }}" target="_blank" rel="noreferrer">{{ print.image_url }}</a></p>
-            {% endif %}
-        {% empty %}
-            <p>No printer actions yet.</p>
-        {% endfor %}
-        <h2>T2 actions</h2>
-        {% for t2_review in ship.t2_reviews.all %}
-            <h3>Review {{ forloop.counter }}</h3>
-            <p><strong>Decision:</strong> {{ t2_review.get_decision_display }} at {{ t2_review.reviewed_at }} by {{ t2_review.reviewer.hackclub_profile.slack_username }}</p>
-            <p><strong>Deductions:</strong> {{ t2_review.deductions }}</p>
-            <p><strong>Feedback:</strong> {{ t2_review.feedback }}</p>
-            <p><strong>Justification:</strong> {{ t2_review.justification }}</p>
-        {% empty %}
-            <p>No T2 reviews yet.</p>
-        {% endfor %}
-
-        <h1>Printing Area</h1>
-        {% if can_claim %}
-            <form action="{% url 'claim_print' ship.id %}" method="POST">
-                {% csrf_token %}
-                <button type="submit">Claim Print</button>
-            </form>
-        {% elif not current_print %}
-            <p>This ship is not currently available for printing.</p>
-        {% elif current_print.finished_time %}
-            <p>This print has already been printed.</p>
-        {% elif current_print.printer == user %}
-            <form action="{% url 'print_decision' ship.id %}" method="POST">
-                {% csrf_token %}
-                <input type="text" placeholder="Weight (grams)" name="weight">
-                <br>
-                <input type="text" placeholder="Feedback (100 chracters, public)" name="feedback" style="width: 250px;">
-                <br>
-                <input type="text" placeholder="Notes (100 characters, internal)" name="internal_notes" style="width: 250px">
-                <br>
-                <input type="text" placeholder="Image URL (from Printables)" name="image_url" style="width: 250px;">
-                <br>
-                <br>
-                <select id="decision" name="decision">
-                    <option value="A">Approve</option>
-                    <option value="T1">Return to T1</option>
-                </select>
-                <br>
-                <br>
-                <button type="submit">Submit</button>
-            </form>
-            <br>
-            <br>
-            <form action="{% url 'unclaim_print' ship.id %}" method="POST">
-                {% csrf_token %}
-                <button type="submit">Unclaim Print</button>
-            </form>
+        </div>
+    {% endfor %}
+    <h2>T1 actions</h2>
+    {% for t1_review in ship.t1_reviews.all %}
+        <h3>Review {{ forloop.counter }}</h3>
+        <p><strong>Approved:</strong> {{ t1_review.approved }} at {{ t1_review.reviewed_at }} by {{ t1_review.reviewer.hackclub_profile.slack_username }}</p>
+        <p><strong>Feedback:</strong> {{ t1_review.feedback }}</p>
+        <p><strong>Internal:</strong> {{ t1_review.internal_notes }}</p>
+        <p><strong>Print:</strong> {{ t1_review.print }}</p>
+    {% empty %}
+        <p>No T1 reviews yet.</p>
+    {% endfor %}
+    <h2>Printer actions</h2>
+    {% for print in ship.prints.all %}
+        <h3>Print {{ forloop.counter }}</h3>
+        {% if print.finished_time %}
+        <p><strong>Action:</strong> {{ print.get_decision_display }} at {{ print.finished_time }} by {{ print.printer.hackclub_profile.slack_username }}</p>
         {% else %}
-            <p>This print has already been claimed by someone.</p>
-        {% endif %} 
-        <form>
+        <p><strong>Action:</strong> {{ print.get_decision_display }} at {{ print.claimed_time }} by {{ print.printer.hackclub_profile.slack_username }}</p>
+        {% endif %}
+        <p><strong>Weight:</strong> {{ print.weight }}</p>
+        <p><strong>Feedback:</strong> {{ print.feedback }}</p>
+        <p><strong>Internal:</strong> {{ print.internal_notes }}</p>
+        {% if print.image_url %}
+            <p><strong>Image:</strong> <a href="{{ print.image_url }}" target="_blank" rel="noreferrer">{{ print.image_url }}</a></p>
+        {% endif %}
+    {% empty %}
+        <p>No printer actions yet.</p>
+    {% endfor %}
+    <h2>T2 actions</h2>
+    {% for t2_review in ship.t2_reviews.all %}
+        <h3>Review {{ forloop.counter }}</h3>
+        <p><strong>Decision:</strong> {{ t2_review.get_decision_display }} at {{ t2_review.reviewed_at }} by {{ t2_review.reviewer.hackclub_profile.slack_username }}</p>
+        <p><strong>Deductions:</strong> {{ t2_review.deductions }}</p>
+        <p><strong>Feedback:</strong> {{ t2_review.feedback }}</p>
+        <p><strong>Justification:</strong> {{ t2_review.justification }}</p>
+    {% empty %}
+        <p>No T2 reviews yet.</p>
+    {% endfor %}
+
+    <h1>Printing Area</h1>
+    {% if can_claim %}
+        <form action="{% url 'claim_print' ship.id %}" method="POST">
+            {% csrf_token %}
+            <button type="submit">Claim Print</button>
         </form>
-    </div> 
-</body>
-</html>
+    {% elif not current_print %}
+        <p>This ship is not currently available for printing.</p>
+    {% elif current_print.finished_time %}
+        <p>This print has already been printed.</p>
+    {% elif current_print.printer == user %}
+        <form action="{% url 'print_decision' ship.id %}" method="POST">
+            {% csrf_token %}
+            <input type="text" placeholder="Weight (grams)" name="weight">
+            <br>
+            <input type="text" placeholder="Feedback (100 chracters, public)" name="feedback" style="width: 250px;">
+            <br>
+            <input type="text" placeholder="Notes (100 characters, internal)" name="internal_notes" style="width: 250px">
+            <br>
+            <input type="text" placeholder="Image URL (from Printables)" name="image_url" style="width: 250px;">
+            <br>
+            <br>
+            <select id="decision" name="decision">
+                <option value="A">Approve</option>
+                <option value="T1">Return to T1</option>
+            </select>
+            <br>
+            <br>
+            <button type="submit">Submit</button>
+        </form>
+        <br>
+        <br>
+        <form action="{% url 'unclaim_print' ship.id %}" method="POST">
+            {% csrf_token %}
+            <button type="submit">Unclaim Print</button>
+        </form>
+    {% else %}
+        <p>This print has already been claimed by someone.</p>
+    {% endif %} 
+    <form>
+    </form>
+</div> 
+{% endblock %}

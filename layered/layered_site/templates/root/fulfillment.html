@@ -1,132 +1,103 @@
-{% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Layered Admin</title>
-    <link rel="stylesheet" href="{% static 'layered_site/style.css' %}">
-</head>
-<body class="page" id="admin-fulfillment-page">
-    <nav class="sidebar">
-        <a href="/root/">home</a>
-        {% if perms.layered_site.fulfillment or perms.layered_site.organizer %}
-            <a href="/root/shop">shop management</a>
-            <a href="/root/fulfillment">fulfillment</a>
-        {% endif %}
-        {% if perms.layered_site.printer or perms.layered_site.organizer %}
-            <a href="/root/print">print</a>
-        {% endif %}
-        {% if perms.layered_site.t1_review or perms.layered_site.organizer or perms.layered_site.t2_review or perms.layered_site.t3_review %}
-            <a href="/root/review">review</a>
-        {% endif %}
-        {% if perms.layered_site.t2_review or perms.layered_site.organizer or perms.layered_site.t3_review %}
-            <a href="/root/ysws_review">ysws review</a>
-        {% endif %}
-        {% if perms.layered_site.t3_review or perms.layered_site.organizer %}
-            <a href="/root/fraud_review">fraud review</a>
-        {% endif %}
-        {% if perms.layered_site.organizer %}
-            <a href="/root/audit_log">audit log</a>
-            <a href="/root/users">users</a>
-        {% endif %}
-        <a href="/dashboard">back home</a>
-    </nav>
-    <div class="content">
-        {% include "root/_messages.html" %}
+{% extends 'root/_base_root.html' %}
 
-        <h1>Fulfillment</h1>
-        <section class="order-list">
-            <h3>Pending</h3>
-            {% if pending_orders %}
-                <div>
-                    {% for order in pending_orders %}
-                        <div class="order-card" data-order-id="{{ order.id }}">
-                            <div class="card-row">
-                                <div class="card-main">
-                                    <img src="{{ order.item.imageUrl }}" alt="{{ order.item.name }}" loading="lazy" style="max-width: 30%; max-height: 200px; height: auto;">
-                                    <br>
-                                    <strong><a href="{% url 'item_detail' order.item.id %}">{{ order.item.name }}</a></strong>
+{% block page_id %}admin-fulfillment-page{% endblock %}
 
-                                    <p>{{ order.item.description }}</p>
-                                    <p>{{ order.item.cost }} layers</p>
-                                    <p><strong>Ordered by:</strong> {{ order.owner.get_full_name|default:order.owner.username }}</p>
-                                    <p><strong>Quantity:</strong> {{ order.quantity }}</p>
-                                    <p><strong>Status:</strong> {{ order.get_status_display }}</p>
-                                    <p><strong>User notes:</strong> {{ order.user_notes|default:"None" }}</p>
-                                    <p><strong>Fulfiller: </strong> {{ order.fulfiller }}</p>
-                                    <p><strong>Admin notes:</strong> {{ order.admin_notes|default:"None" }}</p>
-                                    <p><strong>Created:</strong> {{ order.created_at }}</p>
-                                    {% if order.fulfilled_at %}
-                                        <p><strong>Fulfilled:</strong> {{ order.fulfilled_at }}</p>
-                                    {% endif %}
+{% block content %}
+<div class="content">
+    {% include "root/_messages.html" %}
 
-                                    <form action="{% url 'update_order_status' order.id %}" method="post" class="order-actions">
-                                        {% csrf_token %}
-                                        <button type="submit" name="action" value="pending">Mark pending</button>
-                                        <button type="submit" name="action" value="fulfilled">Mark fulfilled</button>
-                                        <button type="submit" name="action" value="denied">Deny</button>
-                                        <button type="submit" name="action" value="refunded">Refund</button>
-                                    </form>
+    <h1>Fulfillment</h1>
+    <section class="order-list">
+        <h3>Pending</h3>
+        {% if pending_orders %}
+            <div>
+                {% for order in pending_orders %}
+                    <div class="order-card" data-order-id="{{ order.id }}">
+                        <div class="card-row">
+                            <div class="card-main">
+                                <img src="{{ order.item.imageUrl }}" alt="{{ order.item.name }}" loading="lazy" style="max-width: 30%; max-height: 200px; height: auto;">
+                                <br>
+                                <strong><a href="{% url 'item_detail' order.item.id %}">{{ order.item.name }}</a></strong>
 
-                                    <br>
+                                <p>{{ order.item.description }}</p>
+                                <p>{{ order.item.cost }} layers</p>
+                                <p><strong>Ordered by:</strong> {{ order.owner.get_full_name|default:order.owner.username }}</p>
+                                <p><strong>Quantity:</strong> {{ order.quantity }}</p>
+                                <p><strong>Status:</strong> {{ order.get_status_display }}</p>
+                                <p><strong>User notes:</strong> {{ order.user_notes|default:"None" }}</p>
+                                <p><strong>Fulfiller: </strong> {{ order.fulfiller }}</p>
+                                <p><strong>Admin notes:</strong> {{ order.admin_notes|default:"None" }}</p>
+                                <p><strong>Created:</strong> {{ order.created_at }}</p>
+                                {% if order.fulfilled_at %}
+                                    <p><strong>Fulfilled:</strong> {{ order.fulfilled_at }}</p>
+                                {% endif %}
 
-                                </div>
+                                <form action="{% url 'update_order_status' order.id %}" method="post" class="order-actions">
+                                    {% csrf_token %}
+                                    <button type="submit" name="action" value="pending">Mark pending</button>
+                                    <button type="submit" name="action" value="fulfilled">Mark fulfilled</button>
+                                    <button type="submit" name="action" value="denied">Deny</button>
+                                    <button type="submit" name="action" value="refunded">Refund</button>
+                                </form>
+
+                                <br>
+
                             </div>
                         </div>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <p>No pending orders yet.</p>
-            {% endif %}
-        </section>
-        <section class="order-list">
-            <h3>Other Orders</h3>
-            {% if other_orders %}
-                <div>
-                    {% for order in other_orders %}
-                        <div class="order-card" data-order-id="{{ order.id }}">
-                            <div class="card-row">
-                                <div class="card-main">
-                                    <img src="{{ order.item.imageUrl }}" alt="{{ order.item.name }}" loading="lazy" style="max-width: 30%; max-height: 200px; height: auto;">
-                                    <br>
-                                    <strong><a href="{% url 'item_detail' order.item.id %}">{{ order.item.name }}</a></strong>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p>No pending orders yet.</p>
+        {% endif %}
+    </section>
+    <section class="order-list">
+        <h3>Other Orders</h3>
+        {% if other_orders %}
+            <div>
+                {% for order in other_orders %}
+                    <div class="order-card" data-order-id="{{ order.id }}">
+                        <div class="card-row">
+                            <div class="card-main">
+                                <img src="{{ order.item.imageUrl }}" alt="{{ order.item.name }}" loading="lazy" style="max-width: 30%; max-height: 200px; height: auto;">
+                                <br>
+                                <strong><a href="{% url 'item_detail' order.item.id %}">{{ order.item.name }}</a></strong>
 
-                                    <p>{{ order.item.description }}</p>
-                                    <p>{{ order.item.cost }} layers</p>
-                                    <p><strong>Ordered by:</strong> {{ order.owner.get_full_name|default:order.owner.username }}</p>
-                                    <p><strong>Quantity:</strong> {{ order.quantity }}</p>
-                                    <p><strong>Status:</strong> {{ order.get_status_display }}</p>
-                                    <p><strong>User notes:</strong> {{ order.user_notes|default:"None" }}</p>
-                                    <p><strong>Fulfiller: </strong> {{ order.fulfiller.hackclub_profile.slack_username }}</p>
-                                    <p><strong>Admin notes:</strong> {{ order.admin_notes|default:"None" }}</p>
-                                    <p><strong>Created:</strong> {{ order.created_at }}</p>
-                                    {% if order.fulfilled_at %}
-                                        <p><strong>Fulfilled:</strong> {{ order.fulfilled_at }}</p>
-                                    {% endif %}
+                                <p>{{ order.item.description }}</p>
+                                <p>{{ order.item.cost }} layers</p>
+                                <p><strong>Ordered by:</strong> {{ order.owner.get_full_name|default:order.owner.username }}</p>
+                                <p><strong>Quantity:</strong> {{ order.quantity }}</p>
+                                <p><strong>Status:</strong> {{ order.get_status_display }}</p>
+                                <p><strong>User notes:</strong> {{ order.user_notes|default:"None" }}</p>
+                                <p><strong>Fulfiller: </strong> {{ order.fulfiller.hackclub_profile.slack_username }}</p>
+                                <p><strong>Admin notes:</strong> {{ order.admin_notes|default:"None" }}</p>
+                                <p><strong>Created:</strong> {{ order.created_at }}</p>
+                                {% if order.fulfilled_at %}
+                                    <p><strong>Fulfilled:</strong> {{ order.fulfilled_at }}</p>
+                                {% endif %}
 
-                                    <form action="{% url 'update_order_status' order.id %}" method="post" class="order-actions">
-                                        {% csrf_token %}
-                                        <button type="submit" name="action" value="pending">Mark pending</button>
-                                        <button type="submit" name="action" value="fulfilled">Mark fulfilled</button>
-                                        <button type="submit" name="action" value="denied">Deny</button>
-                                        <button type="submit" name="action" value="refunded">Refund</button>
-                                    </form>
+                                <form action="{% url 'update_order_status' order.id %}" method="post" class="order-actions">
+                                    {% csrf_token %}
+                                    <button type="submit" name="action" value="pending">Mark pending</button>
+                                    <button type="submit" name="action" value="fulfilled">Mark fulfilled</button>
+                                    <button type="submit" name="action" value="denied">Deny</button>
+                                    <button type="submit" name="action" value="refunded">Refund</button>
+                                </form>
 
-                                    <br>
+                                <br>
 
-                                </div>
                             </div>
                         </div>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <p>No other orders yet.</p>
-            {% endif %}
-        </section>
-        <div class="profile">
-            <p>{{ user.get_full_name }}</p>
-            <p>{{ profile.layers }} layers</p>
-        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p>No other orders yet.</p>
+        {% endif %}
+    </section>
+    <div class="profile">
+        <p>{{ user.get_full_name }}</p>
+        <p>{{ profile.layers }} layers</p>
     </div>
-</body>
-</html>
+</div>
+{% endblock %}

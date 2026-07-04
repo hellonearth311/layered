@@ -1,53 +1,24 @@
-{% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Layered Admin</title>
-    <link rel="stylesheet" href="{% static 'layered_site/style.css' %}">
-</head>
-<body class="page" id="admin-review-page">
-    <nav class="sidebar">
-        <a href="/root/">home</a>
-        {% if perms.layered_site.fulfillment or perms.layered_site.organizer %}
-            <a href="/root/shop">shop management</a>
-            <a href="/root/fulfillment">fulfillment</a>
-        {% endif %}
-        {% if perms.layered_site.printer or perms.layered_site.organizer %}
-            <a href="/root/print">print</a>
-        {% endif %}
-        {% if perms.layered_site.t1_review or perms.layered_site.organizer or perms.layered_site.t2_review or perms.layered_site.t3_review %}
-            <a href="/root/review">review</a>
-        {% endif %}
-        {% if perms.layered_site.t2_review or perms.layered_site.organizer or perms.layered_site.t3_review %}
-            <a href="/root/ysws_review">ysws review</a>
-        {% endif %}
-        {% if perms.layered_site.t3_review or perms.layered_site.organizer %}
-            <a href="/root/fraud_review">fraud review</a>
-        {% endif %}
-        {% if perms.layered_site.organizer %}
-            <a href="/root/audit_log">audit log</a>
-            <a href="/root/users">users</a>
-        {% endif %}
-        <a href="/dashboard">back home</a>
-    </nav>
-    <div class="content">
-        {% include "root/_messages.html" %}
-        <h1>Review Dash</h1>
-        <h3>(T1) Review em projects!!</h3>
-        {% for ship in ships %}
-            <div class="project-card" data-project-id="{{ ship.project.id }}">
-                <div class="card-row">
-                    <div class="card-main">
-                        <strong><a href="{% url 'review_project' ship.id %}">{{ ship.project.title }}</a></strong>
-                        <p>{{ ship.project.description }}</p>
-                        <p>by {{ ship.project.owner.hackclub_profile.slack_username }}</p>
-                        <p>type: {{ ship.project.editor_name }}</p>
-                    </div>
+{% extends 'root/_base_root.html' %}
+
+{% block page_id %}admin-review-page{% endblock %}
+
+{% block content %}
+<div class="content">
+    {% include "root/_messages.html" %}
+    <h1>Review Dash</h1>
+    <h3>(T1) Review em projects!!</h3>
+    {% for ship in ships %}
+        <div class="project-card" data-project-id="{{ ship.project.id }}">
+            <div class="card-row">
+                <div class="card-main">
+                    <strong><a href="{% url 'review_project' ship.id %}">{{ ship.project.title }}</a></strong>
+                    <p>{{ ship.project.description }}</p>
+                    <p>by {{ ship.project.owner.hackclub_profile.slack_username }}</p>
+                    <p>type: {{ ship.project.editor_name }}</p>
                 </div>
             </div>
-            <br>
-        {% endfor%}
-    </div>
-</body>
-</html>
+        </div>
+        <br>
+    {% endfor%}
+</div>
+{% endblock %}

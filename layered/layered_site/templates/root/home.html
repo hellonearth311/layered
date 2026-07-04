@@ -1,43 +1,14 @@
-{% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Layered Admin</title>
-    <link rel="stylesheet" href="{% static 'layered_site/style.css' %}">
-</head>
-<body class="page" id="admin-dashboard-page">
-    <nav class="sidebar">
-        <a href="/root/">home</a>
-        {% if perms.layered_site.fulfillment or perms.layered_site.organizer %}
-            <a href="/root/shop">shop management</a>
-            <a href="/root/fulfillment">fulfillment</a>
-        {% endif %}
-        {% if perms.layered_site.printer or perms.layered_site.organizer %}
-            <a href="/root/print">print</a>
-        {% endif %}
-        {% if perms.layered_site.t1_review or perms.layered_site.organizer or perms.layered_site.t2_review or perms.layered_site.t3_review %}
-            <a href="/root/review">review</a>
-        {% endif %}
-        {% if perms.layered_site.t2_review or perms.layered_site.organizer or perms.layered_site.t3_review %}
-            <a href="/root/ysws_review">ysws review</a>
-        {% endif %}
-        {% if perms.layered_site.t3_review or perms.layered_site.organizer %}
-            <a href="/root/fraud_review">fraud review</a>
-        {% endif %}
-        {% if perms.layered_site.organizer %}
-            <a href="/root/audit_log">audit log</a>
-            <a href="/root/users">users</a>
-        {% endif %}
-        <a href="/dashboard">back home</a>
-    </nav>
-    <div class="content">
-        {% include "root/_messages.html" %}
-        <h1>Admin Dash</h1>
-        <h2>Statistics</h2>
-        <h3>Users: <span style="font-weight:normal;">{{ users }}</span></h3>
-        <h3>Projects: <span style="font-weight: normal;">{{ projects }}</span></h3>
-        <h3>Ships: <span style="font-weight: normal;">{{ ships }}</span></h3>
-    </div>
-</body>
-</html>
+{% extends "root/_base_root.html" %}
+
+{% block page_id %}admin-dashboard{% endblock %}
+
+{% block content %}
+<div class="content">
+    {% include "root/_messages.html" %}
+    <h1>Admin Dash</h1>
+    <h2>Statistics</h2>
+    <h3>Users: <span style="font-weight:normal;">{{ users }}</span></h3>
+    <h3>Projects: <span style="font-weight: normal;">{{ projects }}</span></h3>
+    <h3>Ships: <span style="font-weight: normal;">{{ ships }}</span></h3>
+</div>
+{% endblock %}
