@@ -1,7 +1,6 @@
 from django.shortcuts import render, redirect
 from authlib.integrations.django_client import OAuth
-from django.contrib.auth import login, logout
-from django.contrib.auth.models import User
+from django.contrib.auth import login, logout, get_user_model
 from django.views.decorators.http import require_POST
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.decorators import login_required
@@ -198,7 +197,8 @@ def auth_callback(request):
     slack_id = userinfo.get("slack_id", "")
     verification_status = userinfo.get("verification_status", "")
 
-    user, created = User.objects.get_or_create(
+    user_model = get_user_model()
+    user, created = user_model.objects.get_or_create(
         username=clean_sub, 
         defaults={
             "email": email,
@@ -657,7 +657,8 @@ def admin_dash(request):
     if not any(user.has_perm(perm) for perm in ["layered_site.organizer", "layered_site.fulfillment", "layered_site.t1_review", "layered_site.t2_review", "layered_site.t3_review", "layered_site.printer"]):
         raise PermissionDenied
     
-    user_count = User.objects.count()
+    user_model = get_user_model()
+    user_count = user_model.objects.count()
     project_count = Project.objects.count()
     ship_count = Ship.objects.count()
     return render(request, "root/home.html", {
@@ -1380,9 +1381,29 @@ def lock_project(request, project_id):
     return redirect(previous_page)
 
 @staff_member_required
+@require_POST
+def unlock_project(request, project_id):
+    user = request.user
+    if not any(user.has_perm(perm) for perm in ["layered_site.organizer", "layered_site.t2_review", "layered_site.t3_review"]):
+        raise PermissionDenied
+
+    project = get_object_or_404(Project, id=project_id, deleted=False)
+    
+    project.locked = False
+    project.save()
+
+    record_audit(request, "unlock_project", target=f"Project #{project.id} ({project.title})", metadata={
+        "project_id": project.id,
+        "project": project.title,
+        "owner": project.owner.username,
+    })
+
+    previous_page = request.META.get("HTTP_REFERER", "root/review")
+    return redirect(previous_page)
+
+@staff_member_required
 def audit_log(request):
     user = request.user
-    # organizers only
     if not user.has_perm("layered_site.organizer"):
         raise PermissionDenied
 
@@ -1410,22 +1431,16 @@ def audit_log(request):
     })
 
 @staff_member_required
-@require_POST
-def unlock_project(request, project_id):
+def users(request):
     user = request.user
-    if not any(user.has_perm(perm) for perm in ["layered_site.organizer", "layered_site.t2_review", "layered_site.t3_review"]):
+    if not user.has_perm("layered_site.organizer"):
         raise PermissionDenied
 
-    project = get_object_or_404(Project, id=project_id, deleted=False)
-    
-    project.locked = False
-    project.save()
+    user_model = get_user_model()
+    users = user_model.objects.all().prefetch_related("groups")
+    default_pfp_url = os.environ["DEFAULT_PFP"]
 
-    record_audit(request, "unlock_project", target=f"Project #{project.id} ({project.title})", metadata={
-        "project_id": project.id,
-        "project": project.title,
-        "owner": project.owner.username,
+    return render(request, "root/users.html", {
+        "users": users,
+        "default_pfp_url": default_pfp_url
     })
-
-    previous_page = request.META.get("HTTP_REFERER", "root/review")
-    return redirect(previous_page)
