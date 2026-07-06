@@ -261,7 +261,7 @@ def projects(request):
 def explore(request):
     profile = request.user.hackclub_profile
 
-    projects = Project.objects.exclude(owner=request.user)
+    projects = Project.objects.filter(deleted=False).exclude(owner=request.user, locked=True)
     return render(request, "layered_site/explore.html", {'profile': profile, 'projects': projects})
 
 def shop(request):
@@ -305,7 +305,7 @@ def create_project(request):
 @login_required
 @require_POST
 def edit_project(request, project_id):
-    project = get_object_or_404(request.user.projects, id=project_id)
+    project = get_object_or_404(request.user.projects, id=project_id, deleted=False)
 
     title = request.POST.get("title", "").strip()
     description = request.POST.get("description", "").strip()
@@ -376,7 +376,7 @@ def delete_project(request, project_id):
 
 @login_required
 def project_detail(request, project_id):
-    project = get_object_or_404(request.user.projects, id=project_id)
+    project = get_object_or_404(request.user.projects, id=project_id, deleted=False)
     user = request.user
     profile = request.user.hackclub_profile
     ships = project.ships.order_by('-created_at')
@@ -447,7 +447,7 @@ def project_detail(request, project_id):
 
 @login_required
 def project_detail_explore(request, project_id):
-    project = get_object_or_404(Project, id=project_id)
+    project = get_object_or_404(Project, id=project_id, deleted=False)
     user = request.user
     profile = user.hackclub_profile
     ships = project.ships.order_by("-created_at")
