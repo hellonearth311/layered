@@ -45,5 +45,6 @@ urlpatterns = [
     path("root/fraud_review/<int:ship_id>", views.fraud_review_project, name="fraud_review_project"),
     path("root/fraud_review/<int:ship_id>/decision", views.t3_decision, name="t3_decision"),
     path("root/audit_log/", views.audit_log, name="audit_log"),
-    path("root/users", views.users, name="users")
+    path("root/users", views.users, name="users"),
+    path("root/users/edit/<int:user_id>", views.edit_user, name="edit_user")
 ]

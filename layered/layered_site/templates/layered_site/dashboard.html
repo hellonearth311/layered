@@ -16,10 +16,5 @@
     <br>
     <p>your slack PFP (512x512px):</p>
     <img src="{{ user.hackclub_profile.slack_pfp_url }}" style="height: 64; width: 64;">
-
-    <form action="{% url 'logout' %}" method="post">
-        {% csrf_token %}    
-        <button id="logoutButton" type="submit">logout</button>
-    </form>
 </div>
 {% endblock %}

@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect
 from authlib.integrations.django_client import OAuth
+from django.contrib.auth.models import Group
 from django.contrib.auth import login, logout, get_user_model
 from django.views.decorators.http import require_POST
 from django.shortcuts import get_object_or_404
@@ -1439,8 +1440,48 @@ def users(request):
     user_model = get_user_model()
     users = user_model.objects.all().prefetch_related("groups")
     default_pfp_url = os.environ["DEFAULT_PFP"]
+    all_groups = Group.objects.all()
 
     return render(request, "root/users.html", {
         "users": users,
-        "default_pfp_url": default_pfp_url
+        "default_pfp_url": default_pfp_url,
+        "all_groups": all_groups
     })
+
+@staff_member_required
+@require_POST
+def edit_user(request, user_id):
+    user = request.user
+    if not user.has_perm("layered_site.organizer"):
+        raise PermissionDenied
+    
+    user_model = get_user_model()
+    targetUser = get_object_or_404(user_model, id=user_id)
+    targetProfile = targetUser.hackclub_profile
+
+    targetUser.username = request.POST.get("editSub")
+    targetUser.email = request.POST.get("editEmail")
+    targetUser.first_name = request.POST.get("editFirstName")
+    targetUser.last_name = request.POST.get("editLastName")
+    targetProfile.slack_username = request.POST.get("editUsername")
+    targetProfile.slack_id = request.POST.get("editSlackId")
+
+    new_layers_raw = request.POST.get("editLayers")
+    try:
+        new_layers = int(new_layers_raw)
+        targetProfile.layers = new_layers
+    except (ValueError, TypeError):
+        pass
+
+    new_pfp = request.POST.get("editSlackPfpUrl")
+    targetProfile.slack_pfp_url = new_pfp if is_valid_image_url(new_pfp) else targetUser.hackclub_profile.slack_pfp_url
+
+    new_groups = request.POST.getlist("groups")
+    targetUser.groups.set(new_groups)   
+
+    targetProfile.save()
+    targetUser.save()
+
+    return redirect("users")
+
+

@@ -36,12 +36,125 @@
                 <td>{{ user.hackclub_profile.layers|default:"0" }}</td>
                 <td>{{ user.groups.all|join:", "|default:"no groups found" }}</td>
                 <td>
-                    <a href="#" onclick="viewPrivateInfoPopup">view private info</a> |
-                    <a href="#" onclick="editUserPopup">edit user</a>
+                    <button
+                        type="button"
+                        class="open-edit-user link-button"
+                        data-user-id="{{ user.id }}"
+                        data-sub="{{ user.username|default:'' }}"
+                        data-email="{{ user.email|default:'' }}"
+                        data-first-name="{{ user.first_name|default:'' }}"
+                        data-last-name="{{ user.last_name|default:'' }}"
+                        data-username="{{ user.hackclub_profile.slack_username|default:'' }}"
+                        data-slack-id="{{ user.hackclub_profile.slack_id|default:'' }}"
+                        data-layers="{{ user.hackclub_profile.layers|default:'0' }}"
+                        data-slack-pfp-url="{{ user.hackclub_profile.slack_pfp_url|default:'' }}"
+                        data-group-ids="{% for group in user.groups.all %}{{ group.id }}{% if not forloop.last %},{% endif %}{% endfor %}"
+                    >edit user</button>
                 </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
+
+    <dialog id="editUserPopup">
+        <form method="POST" id="editUserForm" action="">
+            {% csrf_token %}
+            <h3 id="editUserPopupTitle">Edit User</h3>
+            <label>
+                Sub
+                <input id="editSub" name="editSub" placeholder="sub (OAuth identifier)" required>
+            </label>
+            <label>
+                Email
+                <input id="editEmail" name="editEmail" type="email" placeholder="email" required>
+            </label>
+            <label>
+                First Name
+                <input id="editFirstName" name="editFirstName" placeholder="first name">
+            </label>
+            <label>
+                Last Name
+                <input id="editLastName" name="editLastName" placeholder="last name">
+            </label>
+            <label>
+                Username
+                <input id="editUsername" name="editUsername" placeholder="username" required>
+            </label>
+            <label>
+                Slack ID
+                <input id="editSlackId" name="editSlackId" placeholder="slack id" required>
+            </label>
+            <label>
+                Layers
+                <input id="editLayers" name="editLayers" placeholder="layers" required>
+            </label>
+            <label>
+                Slack PFP URL
+                <input id="editSlackPfpUrl" name="editSlackPfpUrl" placeholder="slack pfp url" required>
+            </label>
+
+            <fieldset class="group-selector">
+                <legend>Groups</legend>
+                {% for group in all_groups %}
+                <label class="group-chip">
+                    <input type="checkbox" name="groups" value="{{ group.id }}" data-group-checkbox>
+                    <span>{{ group.name }}</span>
+                </label>
+                {% empty %}
+                <p>No groups exist yet.</p>
+                {% endfor %}
+            </fieldset>
+
+            <div class="modal-actions">
+                <button type="button" id="cancelEditUser">Cancel</button>
+                <button type="submit">Save</button>
+            </div>
+        </form>
+    </dialog>
 </div>
+
+<script>
+    (function () {
+        const dialog = document.getElementById('editUserPopup');
+        const form = document.getElementById('editUserForm');
+        const title = document.getElementById('editUserPopupTitle');
+        const subInput = document.getElementById('editSub');
+        const emailInput = document.getElementById('editEmail');
+        const firstNameInput = document.getElementById('editFirstName');
+        const lastNameInput = document.getElementById('editLastName');
+        const usernameInput = document.getElementById('editUsername');
+        const slackIdInput = document.getElementById('editSlackId');
+        const layersInput = document.getElementById('editLayers');
+        const slackPfpUrlInput = document.getElementById('editSlackPfpUrl');
+        const cancelBtn = document.getElementById('cancelEditUser');
+        const groupCheckboxes = dialog.querySelectorAll('[data-group-checkbox]');
+
+        const editUserUrlTemplate = "{% url 'edit_user' 0 %}";
+
+        document.querySelectorAll('.open-edit-user').forEach((button) => {
+            button.addEventListener('click', () => {
+                form.action = editUserUrlTemplate.replace('/0', '/' + button.dataset.userId);
+                title.textContent = 'Edit User ' + (button.dataset.username || button.dataset.userId);
+                subInput.value = button.dataset.sub || '';
+                emailInput.value = button.dataset.email || '';
+                firstNameInput.value = button.dataset.firstName || '';
+                lastNameInput.value = button.dataset.lastName || '';
+                usernameInput.value = button.dataset.username || '';
+                slackIdInput.value = button.dataset.slackId || '';
+                layersInput.value = button.dataset.layers || '0';
+                slackPfpUrlInput.value = button.dataset.slackPfpUrl || '';
+
+                const selectedGroupIds = (button.dataset.groupIds || '').split(',').filter(Boolean);
+                groupCheckboxes.forEach((checkbox) => {
+                    checkbox.checked = selectedGroupIds.includes(checkbox.value);
+                });
+
+                dialog.dataset.userId = button.dataset.userId;
+                dialog.showModal();
+            });
+        });
+
+        if (cancelBtn) cancelBtn.addEventListener('click', () => dialog.close());
+    })();
+</script>
 {% endblock %}
