@@ -102,7 +102,11 @@
                 <input type="file" id="STL" name="STL" accept=".stl" required>
                 <br>
                 <br>
-                <button type="submit">Submit entry!</button>
+                {% if project.locked %}
+                    <button type="button" disabled title="You can't make journals on a locked project.">Submit entry!</button>
+                {% else %}
+                    <button type="submit">Submit entry!</button>
+                {% endif %}
             </form>
         {% endif %}
         {% if journals %}

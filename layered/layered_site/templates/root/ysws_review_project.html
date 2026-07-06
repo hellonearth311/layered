@@ -23,6 +23,9 @@
         <br>
         <a href="{{ ship.project.editor_model_url }}" target="_blank" rel="noreferrer noopener">Download editor model</a> ({{ ship.project.editor_name }})
     {% endif %}
+    {% if ship.project.locked %}
+        <p style="color: red;"><strong>Locked</strong></p>
+    {% endif %}
     <h2>Journal Entries</h2>
     {% for journal in journals %}
         <div class="journal-card">
@@ -98,8 +101,25 @@
         <br>
         <input type="number" name="deductions" placeholder="Deductions (minutes)" min="0" style="width: 145px;">
         <br>
-        <button type="submit" id="submit_btn">Submit</button>
+        {% if ship.project.locked %}
+            <button type="submit" disabled title="Can't review a locked project" id="submit_btn">Submit</button>
+        {% else %}
+            <button type="submit" id="submit_btn">Submit</button>
+        {% endif %}
     </form>
+    <br>
+    <br>
+    {% if ship.project.locked %}
+        <form method="post" action="{% url 'unlock_project' ship.project.id %}">
+            {% csrf_token %}
+            <button type="submit" style="color: red;">Unlock</button>
+        </form>
+    {% else %}
+        <form method="post" action="{% url 'lock_project' ship.project.id %}">
+            {% csrf_token %}
+            <button type="submit" style="color: red;">Lock</button>
+        </form>
+    {% endif %}
 </div>
 
 <script>

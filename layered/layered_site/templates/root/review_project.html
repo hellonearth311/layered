@@ -23,6 +23,9 @@
         <br>
         <a href="{{ ship.project.editor_model_url }}" target="_blank" rel="noreferrer noopener">Download editor model</a> ({{ ship.project.editor_name }})
     {% endif %}
+    {% if ship.project.locked %}
+        <p style="color: red;"><strong>Locked</strong></p>
+    {% endif %}
     {% for journal in journals %}
         <div class="journal-card">
             <h3>{{ journal.title }}</h3>
@@ -90,13 +93,13 @@
         <br>
         <br>
         {% if hasMake %}
-        <p>Has make?: <span style="color: green;">True</span></p>
-        <label for="print_required">Print Required?</label>
-        <input type="checkbox" id="print_required" name="print">
+            <p>Has make?: <span style="color: green;">True</span></p>
+            <label for="print_required">Print Required?</label>
+            <input type="checkbox" id="print_required" name="print">
         {% else %}
-        <p>Has make?: <span style="color: red;">False</span></p>
-        <label for="print_required">Print Required?</label>
-        <input type="checkbox" id="print_required" name="print" checked>
+            <p>Has make?: <span style="color: red;">False</span></p>
+            <label for="print_required">Print Required?</label>
+            <input type="checkbox" id="print_required" name="print" checked>
         {% endif %}
         <br>
         <br>
@@ -105,7 +108,11 @@
         <input type="hidden" id="approved_hidden" name="approved" value="denied">
         <br>
         <br>
-        <button type="submit">Reject</button>
+        {% if not ship.project.locked %}
+            <button id="review_button" type="submit">Reject</button>
+        {% else %}
+            <button id="review_button" type="submit" disabled title="Can't review a locked project.">Reject</button>
+        {% endif %}
     </form>
 </div>
 
@@ -113,7 +120,7 @@
     const approvedCheckbox = document.getElementById('approved_checkbox');
     const printRequiredCheckbox = document.getElementById('print_required');
     const approvedHidden = document.getElementById('approved_hidden');
-    const submitButton = document.querySelector('button[type="submit"]');
+    const submitButton = document.getElementById('review_button');
 
     function updateButtonText() {
         if (!approvedCheckbox.checked) {
