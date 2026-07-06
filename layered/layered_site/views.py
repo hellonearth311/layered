@@ -1438,7 +1438,7 @@ def users(request):
         raise PermissionDenied
 
     user_model = get_user_model()
-    users = user_model.objects.all().prefetch_related("groups")
+    users = user_model.objects.all().prefetch_related("groups").order_by("id")
     default_pfp_url = os.environ["DEFAULT_PFP"]
     all_groups = Group.objects.all()
 
