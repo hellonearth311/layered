@@ -4,7 +4,7 @@ from django.contrib.auth.models import Group
 from django.contrib.auth import login, logout, get_user_model
 from django.views.decorators.http import require_POST
 from django.shortcuts import get_object_or_404
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.admin.views.decorators import staff_member_required
 from django.core.exceptions import PermissionDenied
 from django.contrib import messages
@@ -34,6 +34,14 @@ PRINTABLES_URL_RE = re.compile(r"https:\/\/(?:www\.)?printables\.com(?:\/.*)?", 
 slack_client = WebClient(token=os.environ["SLACK_TOKEN"])
 
 # helper functions
+def check_perms(perms):
+    def check_perms_internal(user):
+        for perm in perms:
+            if user.has_perm(perm):
+                return True
+        return False
+    return user_passes_test(check_perms_internal)
+
 def is_valid_printables_url(value):
     return bool(PRINTABLES_URL_RE.match(value))
 
@@ -665,12 +673,8 @@ def ship_project(request, project_id):
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 @staff_member_required
+@check_perms(["layered_site.organizer", "layered_site.fulfillment", "layered_site.t1_review", "layered_site.t2_review", "layered_site.t3_review", "layered_site.printer"])
 def admin_dash(request):
-    # extra layer of security never hurt anyone eh
-    user = request.user
-    if not any(user.has_perm(perm) for perm in ["layered_site.organizer", "layered_site.fulfillment", "layered_site.t1_review", "layered_site.t2_review", "layered_site.t3_review", "layered_site.printer"]):
-        raise PermissionDenied
-    
     user_model = get_user_model()
     user_count = user_model.objects.count()
     project_count = Project.objects.count()
@@ -682,19 +686,14 @@ def admin_dash(request):
     })
 
 @staff_member_required
+@check_perms(["layered_site.organizer", "layered_site.fulfillment"])
 def shop_dash(request):
-    user = request.user
-    if not any(user.has_perm(perm) for perm in ["layered_site.organizer", "layered_site.fulfillment"]):
-        raise PermissionDenied
     items = Item.objects.order_by("id")
     return render(request, "root/shop.html", {"items": items})
 
 @staff_member_required
-def fulfillment_dash(request):
-    user = request.user
-    if not any(user.has_perm(perm) for perm in ["layered_site.organizer", "layered_site.fulfillment"]):
-        raise PermissionDenied
-    
+@check_perms(["layered_site.organizer", "layered_site.fulfillment"])
+def fulfillment_dash(request):    
     orders = Order.objects.select_related("item", "owner").order_by("-created_at")
     pending_orders = orders.filter(status=Order.OrderStatus.PENDING)
     other_orders = orders.exclude(status=Order.OrderStatus.PENDING)
@@ -709,11 +708,8 @@ def fulfillment_dash(request):
 
 @staff_member_required
 @require_POST
+@check_perms(["layered_site.organizer", "layered_site.fulfillment"])
 def update_order_status(request, order_id):
-    user = request.user
-    if not any(user.has_perm(perm) for perm in ["layered_site.organizer", "layered_site.fulfillment"]):
-        raise PermissionDenied
-
     action = request.POST.get("action", "").strip()
 
     status_map = {
@@ -778,11 +774,9 @@ def update_order_status(request, order_id):
     return redirect("fulfillment_dash")
 
 @staff_member_required
+@check_perms(["layered_site.printer", "layered_site.organizer"])
 def print_dash(request):
     user = request.user
-    if not any(user.has_perm(perm) for perm in ["layered_site.printer", "layered_site.organizer"]):
-        raise PermissionDenied
-
     claimed_prints = (
         Print.objects.filter(
             printer=user,
@@ -801,12 +795,9 @@ def print_dash(request):
 
 @staff_member_required
 @require_POST
+@check_perms(["layered_site.printer", "layered_site.organizer"])
 def claim_print(request, ship_id):
     user = request.user
-
-    if not any(user.has_perm(p) for p in ["layered_site.printer", "layered_site.organizer"]):
-        raise PermissionDenied
-
     with transaction.atomic():
         ship = get_object_or_404(Ship.objects.select_for_update(), id=ship_id)
 
@@ -841,12 +832,10 @@ def claim_print(request, ship_id):
 
 @staff_member_required
 @require_POST
+@check_perms(["layered_site.printer", "layered_site.organizer"])
 def unclaim_print(request, ship_id):
     user = request.user
     ship = get_object_or_404(Ship, id=ship_id)
-
-    if not any(user.has_perm(p) for p in ["layered_site.printer", "layered_site.organizer"]):
-        raise PermissionDenied
     if not ship.status == Ship.ShipStatus.BEING_PRINTED:
         messages.error(request, "print is not being printed")
         return redirect("print_dash")
@@ -885,11 +874,8 @@ def unclaim_print(request, ship_id):
     return redirect("print_dash")
 
 @staff_member_required
-def print_project(request, ship_id):
-    user = request.user
-    if not any(user.has_perm(p) for p in ["layered_site.printer", "layered_site.organizer"]):
-        raise PermissionDenied
-    
+@check_perms(["layered_site.printer", "layered_site.organizer"])
+def print_project(request, ship_id):    
     ship = get_object_or_404(Ship, id=ship_id)
     journals = ship.project.journals.order_by('-id')
     if ship.prints.exists():
@@ -906,12 +892,8 @@ def print_project(request, ship_id):
 
 @staff_member_required
 @require_POST
+@check_perms(["layered_site.printer", "layered_site.organizer"])
 def print_decision(request, ship_id):
-    user = request.user
-
-    if not any(user.has_perm(p) for p in ["layered_site.printer", "layered_site.organizer"]):
-        raise PermissionDenied
-
     weight_raw = request.POST.get("weight", "0").strip()
     image_url = request.POST.get("image_url", "").strip()
 
@@ -986,22 +968,16 @@ def print_decision(request, ship_id):
 
 
 @staff_member_required
-def review_dash(request):
-    user = request.user
-    if not any(user.has_perm(perm) for perm in ["layered_site.t1_review", "layered_site.t2_review", "layered_site.organizer", "layered_site.t3_review"]):
-        raise PermissionDenied
-    
+@check_perms(["layered_site.t1_review", "layered_site.t2_review", "layered_site.organizer", "layered_site.t3_review"])
+def review_dash(request):    
     ships = Ship.objects.filter(status=Ship.ShipStatus.T1_QUEUE)
     return render(request, "root/review.html", {
         "ships": ships
     })
 
 @staff_member_required
+@check_perms(["layered_site.t1_review", "layered_site.t2_review", "layered_site.organizer", "layered_site.t3_review"])
 def review_project(request, ship_id):
-    user = request.user
-    if not any(user.has_perm(perm) for perm in ["layered_site.t1_review", "layered_site.t2_review", "layered_site.organizer", "layered_site.t3_review"]):
-        raise PermissionDenied
-
     ship = get_object_or_404(Ship, id=ship_id)
     journals = ship.project.journals.order_by('-id')
     try:
@@ -1017,11 +993,8 @@ def review_project(request, ship_id):
 
 @require_POST
 @staff_member_required
+@check_perms(["layered_site.t1_review", "layered_site.t2_review", "layered_site.organizer", "layered_site.t3_review"])
 def t1_decision(request, ship_id):
-    user = request.user
-    if not any(user.has_perm(perm) for perm in ["layered_site.t1_review", "layered_site.t2_review", "layered_site.organizer", "layered_site.t3_review"]):
-        raise PermissionDenied
-    
     reviewer = request.user
     feedback = request.POST.get("feedback", "").strip()
     internal_notes = request.POST.get("internal_notes", "").strip()
@@ -1074,22 +1047,16 @@ def t1_decision(request, ship_id):
     return redirect("review_dash")
 
 @staff_member_required
+@check_perms(["layered_site.t2_review", "layered_site.organizer", "layered_site.t3_review"])
 def ysws_review_dash(request):
-    user = request.user
-    if not any(user.has_perm(perm) for perm in ["layered_site.t2_review", "layered_site.organizer", "layered_site.t3_review"]):
-        raise PermissionDenied
-
     ships = Ship.objects.filter(status=Ship.ShipStatus.T2_QUEUE)
     return render(request, "root/ysws_review.html", {
         "ships": ships
     })
 
 @staff_member_required
+@check_perms(["layered_site.t2_review", "layered_site.organizer", "layered_site.t3_review"])
 def ysws_review_project(request, ship_id):
-    user = request.user
-    if not any(user.has_perm(perm) for perm in ["layered_site.t2_review", "layered_site.organizer", "layered_site.t3_review"]):
-        raise PermissionDenied
-
     ship = get_object_or_404(Ship, id=ship_id)
     journals = ship.project.journals.order_by('-id')
     return render(request, "root/ysws_review_project.html", {
@@ -1099,11 +1066,8 @@ def ysws_review_project(request, ship_id):
 
 @require_POST
 @staff_member_required
+@check_perms(["layered_site.t2_review", "layered_site.organizer", "layered_site.t3_review"])
 def t2_decision(request, ship_id):
-    user = request.user
-    if not any(user.has_perm(perm) for perm in ["layered_site.t2_review", "layered_site.organizer", "layered_site.t3_review"]):
-        raise PermissionDenied
-    
     reviewer = request.user
     decision = request.POST.get("decision", "").strip()
     deductions = request.POST.get("deductions", "0").strip()
@@ -1176,22 +1140,16 @@ def t2_decision(request, ship_id):
     return redirect("ysws_review_dash")
 
 @staff_member_required
-def fraud_review_dash(request):
-    user = request.user
-    if not any(user.has_perm(perm) for perm in ["layered_site.organizer", "layered_site.t3_review"]):
-        raise PermissionDenied
-    
+@check_perms(["layered_site.organizer", "layered_site.t3_review"])
+def fraud_review_dash(request):    
     ships = Ship.objects.filter(status=Ship.ShipStatus.T3_QUEUE)
     return render(request, "root/fraud_review.html", {
         "ships": ships
     })
 
 @staff_member_required
+@check_perms(["layered_site.organizer", "layered_site.t3_review"])
 def fraud_review_project(request, ship_id):
-    user = request.user
-    if not any(user.has_perm(perm) for perm in ["layered_site.organizer", "layered_site.t3_review"]):
-        raise PermissionDenied
-
     ship = get_object_or_404(Ship, id=ship_id)
     journals = ship.journals.order_by('-id')
     total_time = journals.aggregate(total=Sum('time_spent'))['total'] or 0
@@ -1204,11 +1162,8 @@ def fraud_review_project(request, ship_id):
 
 @require_POST
 @staff_member_required
+@check_perms(["layered_site.organizer", "layered_site.t3_review"])
 def t3_decision(request, ship_id):
-    user = request.user
-    if not any(user.has_perm(perm) for perm in ["layered_site.organizer", "layered_site.t3_review"]):
-        raise PermissionDenied
-    
     reviewer = request.user
     decision = request.POST.get("decision", "").strip()
     internal_notes = request.POST.get("internal_notes", "").strip()
@@ -1286,11 +1241,8 @@ def t3_decision(request, ship_id):
 
 @staff_member_required
 @require_POST
+@check_perms(["layered_site.organizer", "layered_site.fulfillment"])
 def create_item(request):
-    user = request.user
-    if not any(user.has_perm(perm) for perm in ["layered_site.organizer", "layered_site.fulfillment"]):
-        raise PermissionDenied
-    
     name = request.POST.get("name", "").strip()
     description = request.POST.get("description", "").strip()  
     cost = request.POST.get("cost", "").strip()
@@ -1339,11 +1291,8 @@ def create_item(request):
 
 @staff_member_required
 @require_POST
+@check_perms(["layered_site.organizer", "layered_site.fulfillment"])
 def edit_item(request, item_id):
-    user = request.user
-    if not any(user.has_perm(perm) for perm in ["layered_site.organizer", "layered_site.fulfillment"]):
-        raise PermissionDenied
-
     item = get_object_or_404(Item, id=item_id)
 
     name = request.POST.get("name", "").strip()
@@ -1396,11 +1345,8 @@ def edit_item(request, item_id):
 
 @staff_member_required
 @require_POST
+@check_perms(["layered_site.organizer", "layered_site.fulfillment"])
 def delete_item(request, item_id):
-    user = request.user
-    if not any(user.has_perm(perm) for perm in ["layered_site.organizer", "layered_site.fulfillment"]):
-        raise PermissionDenied
-
     item = get_object_or_404(Item, id=item_id)
 
     item.deleted = True
@@ -1415,11 +1361,8 @@ def delete_item(request, item_id):
 
 @staff_member_required
 @require_POST
+@check_perms(["layered_site.organizer", "layered_site.t2_review", "layered_site.t3_review"])
 def lock_project(request, project_id):
-    user = request.user
-    if not any(user.has_perm(perm) for perm in ["layered_site.organizer", "layered_site.t2_review", "layered_site.t3_review"]):
-        raise PermissionDenied
-
     project = get_object_or_404(Project, id=project_id, deleted=False)
     
     project.locked = True
@@ -1436,11 +1379,8 @@ def lock_project(request, project_id):
 
 @staff_member_required
 @require_POST
+@check_perms(["layered_site.organizer", "layered_site.t2_review", "layered_site.t3_review"])
 def unlock_project(request, project_id):
-    user = request.user
-    if not any(user.has_perm(perm) for perm in ["layered_site.organizer", "layered_site.t2_review", "layered_site.t3_review"]):
-        raise PermissionDenied
-
     project = get_object_or_404(Project, id=project_id, deleted=False)
     
     project.locked = False
@@ -1456,11 +1396,8 @@ def unlock_project(request, project_id):
     return redirect(previous_page)
 
 @staff_member_required
+@check_perms(["layered_site.organizer"])
 def audit_log(request):
-    user = request.user
-    if not user.has_perm("layered_site.organizer"):
-        raise PermissionDenied
-
     logs = AuditLog.objects.select_related("actor").all()
 
     action_filter = request.GET.get("action", "").strip()
@@ -1489,11 +1426,8 @@ def audit_log(request):
     })
 
 @staff_member_required
+@check_perms(["layered_site.organizer"])
 def users(request):
-    user = request.user
-    if not user.has_perm("layered_site.organizer"):
-        raise PermissionDenied
-
     user_model = get_user_model()
     users = user_model.objects.all().prefetch_related("groups").order_by("id")
 
@@ -1513,11 +1447,8 @@ def users(request):
 
 @staff_member_required
 @require_POST
-def edit_user(request, user_id):
-    user = request.user
-    if not user.has_perm("layered_site.organizer"):
-        raise PermissionDenied
-    
+@check_perms(["layered_site.organizer"])
+def edit_user(request, user_id):    
     user_model = get_user_model()
     targetUser = get_object_or_404(user_model, id=user_id)
     targetProfile = targetUser.hackclub_profile
@@ -1552,7 +1483,8 @@ def edit_user(request, user_id):
     targetProfile.slack_pfp_url = new_pfp if is_valid_image_url(new_pfp) else targetUser.hackclub_profile.slack_pfp_url
 
     new_groups = request.POST.getlist("groups")
-    targetUser.groups.set(new_groups)   
+    targetUser.groups.set(new_groups)
+    targetUser.is_staff = targetUser.groups.exists()
 
     targetProfile.save()
     targetUser.save()
