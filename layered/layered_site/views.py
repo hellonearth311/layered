@@ -38,9 +38,6 @@ def is_valid_printables_url(value):
     return bool(PRINTABLES_URL_RE.match(value))
 
 def layers_for_minutes(minutes):
-    # payout is 5 layers per hour, measured at 0.1-hour (6-minute) granularity,
-    # then rounded to a whole number of layers.
-    # e.g. 220 min -> 3.6h -> 18 layers
     tenths_of_hour = minutes // 6
     return round(tenths_of_hour * 0.5)
 
@@ -633,8 +630,6 @@ def ship_project(request, project_id):
     if not project.description:
         messages.error(request, "your project must have a description before you can ship!")
         return redirect("projects")
-    # only journals not already snapshotted onto a previous ship count toward
-    # this ship, so eligibility must be measured against that same set.
     unassigned_journals = project.journals.filter(ship__isnull=True)
     if not unassigned_journals.exists():
         messages.error(request, "your project must have at least one journal to be shipped")
@@ -648,13 +643,17 @@ def ship_project(request, project_id):
         messages.error(request, "You cannot reship until your most recent ship has been finalized or rejected.")
         return redirect("project_detail", project_id=project_id)
 
+    if latest_ship:
+        journals = project.journals.filter(ship__isnull=True)
+        if (journals.aggregate(total=Sum('time_spent'))['total'] or 0) <= 120:
+            messages.error(request, "Can't ship again without at least 2 hours of work!")
+            return redirect("projects")
+
     with transaction.atomic():
         ship = Ship.objects.create(
             project = project,
             status = Ship.ShipStatus.T1_QUEUE
         )
-        # snapshot the time onto this ship: claim every journal not already
-        # tied to a ship so later journals can't inflate this ship's payout.
         project.journals.filter(ship__isnull=True).update(ship=ship)
 
     messages.success(request, f'Successfully shipped project "{project.title}"!')
@@ -1194,8 +1193,6 @@ def fraud_review_project(request, ship_id):
         raise PermissionDenied
 
     ship = get_object_or_404(Ship, id=ship_id)
-    # only the journals snapshotted onto this ship count toward its payout,
-    # not whatever the project has accumulated live since it shipped.
     journals = ship.journals.order_by('-id')
     total_time = journals.aggregate(total=Sum('time_spent'))['total'] or 0
 
@@ -1271,7 +1268,7 @@ def t3_decision(request, ship_id):
         )
 
     owner_slack_id = ship.project.owner.hackclub_profile.slack_id
-    send_slack_dm(f"Your project <https://layered.hacklub.com/projects/{ship.project.id}|{ship.project.title}> has been finalized!", owner_slack_id) if decision == T3.Decision.APPROVE else send_slack_dm(f"Your project <https://layered.hacklub.com/projects/{ship.project.id}|{ship.project.title}> has been {message}!", owner_slack_id)
+    send_slack_dm(f"Your project <https://layered.hacklub.com/projects/{ship.project.id}|{ship.project.title}> has been finalized and you've received {payout_layers} layers for it!", owner_slack_id) if decision == T3.Decision.APPROVE else send_slack_dm(f"Your project <https://layered.hacklub.com/projects/{ship.project.id}|{ship.project.title}> has been {message}!", owner_slack_id)
 
     record_audit(request, "t3_decision", target=f"Ship #{ship.id} ({ship.project.title})", metadata={
         "ship_id": ship.id,
