@@ -297,6 +297,7 @@ class Order(models.Model):
 	created_at = models.DateTimeField(auto_now_add=True)
 	quantity = models.PositiveIntegerField(default=1)
 	cost = models.PositiveIntegerField(blank=True)
+	refunded = models.BooleanField(blank=True, null=True)
 
 	def save(self, *args, **kwargs):
 		if not self.cost and self.item:

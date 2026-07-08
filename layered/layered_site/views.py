@@ -721,6 +721,10 @@ def update_order_status(request, order_id):
         prev_status = order.status
         order.status = status_map[action]
 
+        if order.refunded:
+            order.status = prev_status
+            messages.error(request, "This order has already been refunded and cannot be further edited.")
+            return redirect("fulfillment_dash")
         if prev_status == order.status:
             order.status = prev_status
             messages.error(request, f"Order status is already { {'P': 'pending', 'D': 'denied', 'F': 'fulfilled', 'R': 'refunded'}.get(order.status) }!")
@@ -733,9 +737,10 @@ def update_order_status(request, order_id):
             amount_refunded = order.cost * order.quantity
             profile.layers += amount_refunded
             profile.save()
+            order.refunded = True
         else:
             order.fulfilled_at = timezone.now()
-        order.save(update_fields=["status", "fulfilled_at", "fulfiller"])
+        order.save(update_fields=["status", "fulfilled_at", "fulfiller", "refunded"])
 
     record_audit(request, "update_order_status", target=f"Order #{order.id}", metadata={
         "order_id": order.id,
