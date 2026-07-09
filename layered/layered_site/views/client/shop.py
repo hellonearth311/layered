@@ -6,6 +6,7 @@ from django.db import transaction
 
 from ...models import Profile, Item, Order
 
+@login_required
 def shop(request):
     profile = request.user.hackclub_profile
     items = Item.objects.filter(deleted=False).order_by("id")

@@ -192,6 +192,7 @@ def project_detail(request, project_id):
         "allowed_editor_extensions": ",".join(EDITOR_FILE_EXTENSIONS.keys()),
     })
 
+@login_required
 def explore(request):
     profile = request.user.hackclub_profile
 
