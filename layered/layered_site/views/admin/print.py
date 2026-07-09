@@ -162,15 +162,7 @@ def print_decision(request, ship_id):
         if not active_print:
             messages.error(request, "no active print found")
             return redirect("print_project", ship_id=ship_id)
-
-        active_print.finished_time = timezone.now()
-        active_print.weight = weight
-        active_print.internal_notes = internal_notes
-        active_print.feedback = feedback
-        active_print.decision = decision
-        active_print.image_url = image_url
-        active_print.save()
-
+        
         match decision:
             case Print.Decision.RETURN_T1:
                 ship.status = Ship.ShipStatus.T1_QUEUE
@@ -179,6 +171,14 @@ def print_decision(request, ship_id):
             case _:
                 messages.error(request, f"Invalid decision (got: {decision})")
                 return redirect("print_dash")
+
+        active_print.finished_time = timezone.now()
+        active_print.weight = weight
+        active_print.internal_notes = internal_notes
+        active_print.feedback = feedback
+        active_print.decision = decision
+        active_print.image_url = image_url
+        active_print.save()
 
         ship.save()
 
