@@ -55,6 +55,10 @@ def create_project(request):
 def edit_project(request, project_id):
     project = get_object_or_404(request.user.projects, id=project_id, deleted=False)
 
+    if project.locked:
+        messages.error(request, "You cannot edit a locked project.")
+        return redirect("projects")
+
     title = request.POST.get("title", "").strip()
     description = request.POST.get("description", "").strip()
     printables_url = request.POST.get("printables_url", "").strip()
@@ -115,7 +119,18 @@ def update_editor_model(request, project_id):
 @login_required
 @require_POST
 def delete_project(request, project_id):
-    project = get_object_or_404(request.user.projects, id=project_id)
+    project = get_object_or_404(request.user.projects, id=project_id, deleted=False)
+
+    if project.locked:
+        messages.error(request, "You cannot delete a locked project.")
+        return redirect("projects")
+
+    in_flight = project.ships.exclude(
+        status__in=(Ship.ShipStatus.FINALIZED, Ship.ShipStatus.REJECTED)
+    ).exists()
+    if in_flight:
+        messages.error(request, "You cannot delete a project while a ship is under review. Wait until it is finalized or rejected.")
+        return redirect("projects")
 
     project.deleted = True
     project.save()
