@@ -1,5 +1,5 @@
 from ...views.admin.dashboard import admin_dash
-from ...views.admin.misc import audit_log, users, edit_user
+from ...views.admin.misc import audit_log, users, edit_user, manage_projects, admin_edit_project
 from ...views.admin.print import print_dash, print_project, claim_print, unclaim_print, print_decision
 from ...views.admin.review import review_dash, review_project, t1_decision
 from ...views.admin.review import ysws_review_dash, ysws_review_project, t2_decision
@@ -9,7 +9,7 @@ from ...views.admin.shop import shop_dash, create_item, edit_item, delete_item, 
 
 __all__ = [
     "admin_dash", 
-    "audit_log", "users", "edit_user", 
+    "audit_log", "users", "edit_user", "manage_projects", "admin_edit_project",
     "print_dash", "print_project", "claim_print", "unclaim_print", "print_decision", 
     "review_dash", "review_project", "t1_decision",
     "ysws_review_dash", "ysws_review_project", "t2_decision",

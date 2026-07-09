@@ -4,10 +4,10 @@ from django.contrib.auth import get_user_model
 from django.views.decorators.http import require_POST
 from django.shortcuts import get_object_or_404
 from django.contrib.admin.views.decorators import staff_member_required
-from django.db.models import Q
+from django.db.models import Q, Sum
 from django.core.paginator import Paginator
 
-from ...models import AuditLog
+from ...models import AuditLog, Project
 from ..helpers import check_perms, is_valid_image_url, record_audit
 
 import os
@@ -123,3 +123,65 @@ def edit_user(request, user_id):
     })
 
     return redirect("users")
+
+@staff_member_required
+@check_perms(["layered_site.organizer"])
+def manage_projects(request):
+    projects = Project.objects.select_related("owner", "owner__hackclub_profile").order_by("id")
+
+    search_query = request.GET.get("q", "").strip()
+    if search_query:
+        projects = projects.filter(
+            Q(title__icontains=search_query)
+            | Q(owner__hackclub_profile__slack_username__icontains=search_query)
+        )
+
+    for project in projects:
+        total_time = project.journals.aggregate(total=Sum("time_spent"))["total"] or 0
+        project.time_spent_display = f"{total_time // 60}h {total_time % 60}m"
+        project.journal_count = project.journals.count()
+        latest_ship = project.ships.order_by("-created_at").first()
+        project.status_display = latest_ship.get_status_display() if latest_ship else "No ships yet"
+
+    default_pfp_url = os.environ["DEFAULT_PFP"]
+
+    return render(request, "root/manage_projects.html", {
+        "projects": projects,
+        "default_pfp_url": default_pfp_url,
+        "search_query": search_query,
+    })
+
+@staff_member_required
+@require_POST
+@check_perms(["layered_site.organizer"])
+def admin_edit_project(request, project_id):
+    project = get_object_or_404(Project, id=project_id)
+
+    previous = {
+        "title": project.title,
+        "description": project.description,
+        "printablesUrl": project.printablesUrl,
+        "editor_model_url": project.editor_model_url,
+        "deleted": project.deleted,
+    }
+
+    project.title = request.POST.get("editTitle", "").strip()
+    project.description = request.POST.get("editDescription", "").strip()
+    project.printablesUrl = request.POST.get("editPrintablesUrl", "").strip()
+    project.editor_model_url = request.POST.get("editEditorModelUrl", "").strip()
+    project.deleted = request.POST.get("editDeleted") == "1"
+    project.save()
+
+    record_audit(request, "edit_project", target=f"Project #{project.id} ({project.title})", metadata={
+        "project_id": project.id,
+        "previous": previous,
+        "new": {
+            "title": project.title,
+            "description": project.description,
+            "printablesUrl": project.printablesUrl,
+            "editor_model_url": project.editor_model_url,
+            "deleted": project.deleted,
+        },
+    })
+
+    return redirect("manage_projects")

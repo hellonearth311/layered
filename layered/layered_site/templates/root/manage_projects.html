@@ -1,0 +1,163 @@
+{% extends 'root/_base_root.html' %}
+
+{% block page_id %}admin-projects-page{% endblock %}
+{% block title %}Projects{% endblock %}
+
+{% block content %}
+<div class="content">
+    {% include "root/_messages.html" %}
+    <h1>Projects</h1>
+    <h3>Manage Projects</h3>
+    <form method="GET" class="users-search" role="search">
+        <input
+            id="projectSearchInput"
+            type="search"
+            name="q"
+            value="{{ search_query }}"
+            placeholder="Search by project title or Slack username"
+            aria-label="Search by project title or Slack username"
+            autocomplete="off"
+            style="width: 275px;"
+        >
+        <noscript><button type="submit">Search</button></noscript>
+        {% if search_query %}
+        <a href="{% url 'manage_projects' %}" class="link-button">Clear</a>
+        {% endif %}
+    </form>
+    <table class="users-table">
+        <thead>
+            <tr>
+                <th>Project ID</th>
+                <th>Owner</th>
+                <th>Project Title</th>
+                <th>Description</th>
+                <th>Time Spent</th>
+                <th>Journals</th>
+                <th>Status</th>
+                <th>Deleted</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for project in projects %}
+            <tr data-project-id="{{ project.id }}" data-title="{{ project.title|default:''|lower }}" data-owner="{{ project.owner.hackclub_profile.slack_username|default:''|lower }}">
+                <td>{{ project.id }}</td>
+                <td>{{ project.owner.hackclub_profile.slack_username }}</td>
+                <td>{{ project.title }}</td>
+                <td>{{ project.description|truncatechars:80 }}</td>
+                <td>{{ project.time_spent_display }}</td>
+                <td>{{ project.journal_count }}</td>
+                <td>{{ project.status_display }}</td>
+                <td>{{ project.deleted|yesno:"Yes,No" }}</td>
+                <td>
+                    <button
+                        type="button"
+                        class="open-edit-project link-button"
+                        data-project-id="{{ project.id }}"
+                        data-title="{{ project.title|default:'' }}"
+                        data-description="{{ project.description|default:'' }}"
+                        data-printables-url="{{ project.printablesUrl|default:'' }}"
+                        data-editor-model-url="{{ project.editor_model_url|default:'' }}"
+                        data-deleted="{{ project.deleted|yesno:'1,0' }}"
+                    >edit project</button>
+                    <br>
+                    <a href="{% url 'project_detail_explore' project.id %}" class="link-button" target="_blank" rel="noopener">view on explore</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <p id="projectSearchEmpty" hidden>No projects match that search.</p>
+
+    <dialog id="editProjectPopup">
+        <form method="POST" id="editProjectForm" action="">
+            {% csrf_token %}
+            <h3 id="editProjectPopupTitle">Edit Project</h3>
+            <label>
+                Title
+                <input id="editTitle" name="editTitle" placeholder="title" required>
+            </label>
+            <label>
+                Description
+                <input id="editDescription" name="editDescription" placeholder="description" required>
+            </label>
+            <label>
+                Printables URL
+                <input id="editPrintablesUrl" name="editPrintablesUrl" placeholder="printables url">
+            </label>
+            <label>
+                Editor Model URL
+                <input id="editEditorModelUrl" name="editEditorModelUrl" placeholder="editor model url">
+            </label>
+            <label class="checkbox-label">
+                <input id="editDeleted" name="editDeleted" type="checkbox" value="1">
+                Deleted
+            </label>
+
+            <div class="modal-actions">
+                <button type="button" id="cancelEditProject">Cancel</button>
+                <button type="submit">Save</button>
+            </div>
+        </form>
+    </dialog>
+</div>
+
+<script>
+    (function () {
+        const dialog = document.getElementById('editProjectPopup');
+        const form = document.getElementById('editProjectForm');
+        const title = document.getElementById('editProjectPopupTitle');
+        const titleInput = document.getElementById('editTitle');
+        const descriptionInput = document.getElementById('editDescription');
+        const printablesUrlInput = document.getElementById('editPrintablesUrl');
+        const editorModelUrlInput = document.getElementById('editEditorModelUrl');
+        const deletedInput = document.getElementById('editDeleted');
+        const cancelBtn = document.getElementById('cancelEditProject');
+
+        const editProjectUrlTemplate = "{% url 'admin_edit_project' 0 %}";
+
+        document.querySelectorAll('.open-edit-project').forEach((button) => {
+            button.addEventListener('click', () => {
+                form.action = editProjectUrlTemplate.replace('/0/', '/' + button.dataset.projectId + '/');
+                title.textContent = 'Edit Project ' + (button.dataset.title || button.dataset.projectId);
+                titleInput.value = button.dataset.title || '';
+                descriptionInput.value = button.dataset.description || '';
+                printablesUrlInput.value = button.dataset.printablesUrl || '';
+                editorModelUrlInput.value = button.dataset.editorModelUrl || '';
+                deletedInput.checked = button.dataset.deleted === '1';
+
+                dialog.dataset.projectId = button.dataset.projectId;
+                dialog.showModal();
+            });
+        });
+
+        if (cancelBtn) cancelBtn.addEventListener('click', () => dialog.close());
+    })();
+
+    (function () {
+        const input = document.getElementById('projectSearchInput');
+        const empty = document.getElementById('projectSearchEmpty');
+        if (!input) return;
+
+        const rows = Array.from(document.querySelectorAll('.users-table tbody tr'));
+        const searchForm = input.closest('form');
+
+        function applyFilter() {
+            const query = input.value.trim().toLowerCase();
+            let visibleCount = 0;
+            rows.forEach((row) => {
+                const title = row.dataset.title || '';
+                const owner = row.dataset.owner || '';
+                const match = title.includes(query) || owner.includes(query);
+                row.hidden = !match;
+                if (match) visibleCount += 1;
+            });
+            if (empty) empty.hidden = visibleCount !== 0;
+        }
+
+        if (searchForm) searchForm.addEventListener('submit', (event) => event.preventDefault());
+        input.addEventListener('input', applyFilter);
+        applyFilter();
+    })();
+</script>
+{% endblock %}
