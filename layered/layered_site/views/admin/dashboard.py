@@ -10,8 +10,12 @@ from ..helpers import check_perms
 def admin_dash(request):
     user_model = get_user_model()
     user_count = user_model.objects.count()
-    project_count = Project.objects.count()
+    
+    projects = Project.objects.filter(deleted=False)
+    project_count = projects.count()
+
     ship_count = Ship.objects.count()
+
     return render(request, "root/home.html", {
         "users": user_count,
         "projects": project_count,
