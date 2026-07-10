@@ -125,6 +125,10 @@ def t2_decision(request, ship_id):
         messages.error(request, f"Expected integer, got {deductions}")
         return redirect("ysws_review_dash")
 
+    if deductions < 0:
+        messages.error(request, f"Deductions can't be negative. (deductions: {deductions})")
+        return redirect("ysws_review_dash")
+
     feedback = request.POST.get("feedback", "").strip()
     justification = request.POST.get("justification", "").strip()
 
@@ -170,15 +174,6 @@ def t2_decision(request, ship_id):
             justification=justification
         )
 
-        remaining = deductions
-        for journal in ship.project.journals.order_by('-id'):
-            if remaining <= 0:
-                break
-            deduct = min(journal.time_spent, remaining)
-            journal.time_spent -= deduct
-            journal.save(update_fields=['time_spent'])
-            remaining -= deduct
-
     owner_slack_id = ship.project.owner.hackclub_profile.slack_id
     send_slack_dm(f"Your project <https://layered.hacklub.com/projects/{ship.project.id}|{ship.project.title}> has been T2 reviewed and {message}! Here's what they said about it: _{feedback}_", owner_slack_id)
 
@@ -207,11 +202,17 @@ def fraud_review_dash(request):
 def fraud_review_project(request, ship_id):
     ship = get_object_or_404(Ship, id=ship_id)
     journals = ship.journals.order_by('-id')
-    total_time = journals.aggregate(total=Sum('time_spent'))['total'] or 0
+    logged_time = journals.aggregate(total=Sum('time_spent'))['total'] or 0
+
+    latest_t2 = ship.t2_reviews.order_by('-id').first()
+    deductions = latest_t2.deductions if latest_t2 else 0
+    total_time = max(logged_time - deductions, 0)
 
     return render(request, "root/fraud_review_project.html", {
         "ship": ship,
         "journals": journals,
+        "logged_time": logged_time,
+        "deductions": deductions,
         "total_time": total_time
     })
 

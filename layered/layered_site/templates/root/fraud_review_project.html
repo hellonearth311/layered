@@ -85,6 +85,9 @@
     {% endfor %}
 
     <h1>Review</h1>
+    <p><strong>Logged time:</strong> {{ logged_time }} minutes</p>
+    <p><strong>T2 deductions:</strong> {{ deductions }} minutes</p>
+    <p><strong>Net time (payout default):</strong> {{ total_time }} minutes</p>
     <form action="{% url 't3_decision' ship.id %}" method="POST">
         {% csrf_token %}
         <input type="text" name="internal_notes" placeholder="Internal Notes" style="width: 250px;" required>
