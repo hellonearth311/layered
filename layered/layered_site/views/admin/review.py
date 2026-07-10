@@ -310,8 +310,7 @@ def lock_project(request, project_id):
         "owner": project.owner.username,
     })
 
-    previous_page = request.META.get("HTTP_REFERER", "root/review")
-    return redirect(previous_page)
+    return redirect(request.META.get("HTTP_REFERER", "/"))
 
 @staff_member_required
 @require_POST
@@ -328,5 +327,4 @@ def unlock_project(request, project_id):
         "owner": project.owner.username,
     })
 
-    previous_page = request.META.get("HTTP_REFERER", "root/review")
-    return redirect(previous_page)
+    return redirect(request.META.get("HTTP_REFERER", "/"))
