@@ -7,9 +7,19 @@ from slack_sdk import WebClient
 
 from urllib.parse import urlparse
 
+from PIL import Image
+
 import os
+import uuid
 import requests
 import re
+
+ALLOWED_IMAGE_FORMATS = {
+    "PNG": ".png",
+    "JPEG": ".jpg",
+    "GIF": ".gif",
+    "WEBP": ".webp",
+}
 
 PRINTABLES_URL_RE = re.compile(r"https:\/\/(?:www\.)?printables\.com(?:\/.*)?", re.IGNORECASE)
 CLOUDFLARE_BUCKET_RE = re.compile(r"^https?:\/\/(?:[a-zA-Z0-9-]+\.)*pub-d9ac82fd80854a42ae2dde2757ff0a55\.r2\.dev(?:\/.*)?$", re.IGNORECASE)
@@ -155,3 +165,18 @@ def validate_file_size(file, max_mb):
     if file.size > max_b:
         return False
     return True
+
+def sniff_image_extension(file):
+    try:
+        file.seek(0)
+        image = Image.open(file)
+        image_format = image.format
+        image.verify()
+    except Exception:
+        return None
+    finally:
+        file.seek(0)
+    return ALLOWED_IMAGE_FORMATS.get(image_format)
+
+def random_storage_key(prefix, extension):
+    return f"{prefix}/{uuid.uuid4().hex}{extension}"

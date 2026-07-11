@@ -13,7 +13,10 @@ from math import floor
 from ...models import (
     Project, Ship, Print, Journal, ALLOWED_EDITORS, EDITOR_FILE_EXTENSIONS, detect_editor_from_filename, detect_editor_from_link
 )
-from ..helpers import is_valid_printables_url, get_model_info, validate_file_size
+from ..helpers import (
+    is_valid_printables_url, get_model_info, validate_file_size,
+    sniff_image_extension, random_storage_key,
+)
 
 import os
 
@@ -125,8 +128,9 @@ def update_editor_model(request, project_id):
                 messages.error(request, f"Editor model file too large. Max 50MB.")
                 return redirect("project_detail", project_id=project_id)
             
+            editor_ext = os.path.splitext(editor_model_file.name)[1].lower()
             editor_model_key = default_storage.save(
-                f"editor_models/{os.path.basename(editor_model_file.name)}", editor_model_file
+                random_storage_key("editor_models", editor_ext), editor_model_file
             )
         else:
             messages.error(request, "File uploads are currently disabled.")
@@ -333,13 +337,10 @@ def create_journal(request, project_id):
         messages.error(request, "An STL model is required.")
         return redirect("project_detail", project_id=project_id)
 
-    if not (image_file.content_type or "").startswith("image/"):
-        messages.error(request, "Uploaded image must be an image file.")
-        return redirect("project_detail", project_id=project_id)
     if not os.path.basename(model_file.name).lower().endswith(".stl"):
         messages.error(request, "Uploaded model must be an STL file.")
         return redirect("project_detail", project_id=project_id)
-    
+
     if not validate_file_size(image_file, 5):
         messages.error(request, "Max file size for images is 5MB.")
         return redirect("project_detail", project_id=project_id)
@@ -347,8 +348,13 @@ def create_journal(request, project_id):
         messages.error(request, "Max file size for STL files is 50MB.")
         return redirect("project_detail", project_id=project_id)
 
-    image_key = default_storage.save(f"images/{os.path.basename(image_file.name)}", image_file)
-    model_key = default_storage.save(f"models/{os.path.basename(model_file.name)}", model_file)
+    image_ext = sniff_image_extension(image_file)
+    if not image_ext:
+        messages.error(request, "Uploaded image must be a valid PNG, JPEG, GIF, or WEBP file.")
+        return redirect("project_detail", project_id=project_id)
+
+    image_key = default_storage.save(random_storage_key("images", image_ext), image_file)
+    model_key = default_storage.save(random_storage_key("models", ".stl"), model_file)
 
     image_url = default_storage.url(image_key)
     model_url = default_storage.url(model_key)
