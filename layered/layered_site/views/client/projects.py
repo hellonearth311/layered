@@ -382,20 +382,17 @@ def ship_project(request, project_id):
         messages.error(request, "This project is locked. You cannot ship a locked project.")
         return redirect("projects")
     if not is_valid_printables_url(project.printablesUrl):
-        messages.error(request, "you need a printables URL to ship!")
+        messages.error(request, "You need a printables URL to ship!")
         return redirect("projects")
     if not project.editor_model_url:
-        messages.error(request, "you need to upload or link your editor model before you can ship!")
+        messages.error(request, "You need to upload or link your editor model before you can ship!")
         return redirect("projects")
     if not project.description:
-        messages.error(request, "your project must have a description before you can ship!")
+        messages.error(request, "Your project must have a description before you can ship!")
         return redirect("projects")
     unassigned_journals = project.journals.filter(ship__isnull=True)
     if not unassigned_journals.exists():
-        messages.error(request, "your project must have at least one journal to be shipped")
-        return redirect("projects")
-    if (unassigned_journals.aggregate(total=Sum('time_spent'))['total'] or 0) <= 180:
-        messages.error(request, "you must have atleast 3 hours of logged time before you can ship!")
+        messages.error(request, "Your project must have at least one journal to be shipped")
         return redirect("projects")
 
     latest_ship = project.ships.order_by('-created_at').first()
@@ -403,10 +400,14 @@ def ship_project(request, project_id):
         messages.error(request, "You cannot reship until your most recent ship has been finalized or rejected.")
         return redirect("project_detail", project_id=project_id)
 
+    unassigned_time = unassigned_journals.aggregate(total=Sum('time_spent'))['total'] or 0
     if latest_ship:
-        journals = project.journals.filter(ship__isnull=True)
-        if (journals.aggregate(total=Sum('time_spent'))['total'] or 0) <= 120:
+        if unassigned_time <= 120:
             messages.error(request, "Can't ship again without at least 2 hours of work!")
+            return redirect("projects")
+    else:
+        if unassigned_time <= 180:
+            messages.error(request, "You must have atleast 3 hours of logged time before you can ship!")
             return redirect("projects")
 
     with transaction.atomic():
