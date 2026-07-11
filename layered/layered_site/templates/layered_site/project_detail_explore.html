@@ -29,6 +29,7 @@
         {% if project.editor_model_url %}
             <p><a href="{{ project.editor_model_url }}" target="_blank" rel="noreferrer noopener">Download editor model</a> ({{ project.editor_name }})</p>
         {% endif %}
+        <p>by {{ project.owner.hackclub_profile.slack_username }}</p>
         {% if perms.layered_site.t2_review or perms.layered_site.organizer or perms.layered_site.t3_review %}
             {% if project.locked %}
                 <form method="post" action="{% url 'unlock_project' project.id %}">
