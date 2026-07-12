@@ -6,7 +6,7 @@ from ..models import AuditLog
 from slack_sdk.errors import SlackApiError
 from slack_sdk import WebClient
 
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urljoin
 
 from PIL import Image
 
@@ -14,6 +14,8 @@ import os
 import uuid
 import requests
 import re
+import socket
+import ipaddress
 
 ALLOWED_IMAGE_FORMATS = {
     "PNG": ".png",
@@ -74,12 +76,56 @@ def record_audit(request, action, target="", metadata=None):
     except Exception as e:
         messages.error(request, f"Failed to log audit: {e}")
 
-def is_valid_image_url(url):
+def _is_public_ip(ip):
+    return not (
+        ip.is_private
+        or ip.is_loopback
+        or ip.is_link_local
+        or ip.is_reserved
+        or ip.is_multicast
+        or ip.is_unspecified
+    )
+
+def _host_resolves_to_public(hostname):
+    if not hostname:
+        return False
     try:
+        addr_info = socket.getaddrinfo(hostname, None)
+    except socket.gaierror:
+        return False
+    for *_, sockaddr in addr_info:
+        try:
+            ip = ipaddress.ip_address(sockaddr[0])
+        except ValueError:
+            return False
+        if getattr(ip, "ipv4_mapped", None):
+            ip = ip.ipv4_mapped
+        if not _is_public_ip(ip):
+            return False
+    return True
+
+def _safe_head(url, max_redirects=5):
+    for _ in range(max_redirects + 1):
         result = urlparse(url)
         if result.scheme not in ('http', 'https') or not result.netloc:
+            return None
+        if not _host_resolves_to_public(result.hostname):
+            return None
+        response = requests.head(url, allow_redirects=False, timeout=5)
+        if response.is_redirect or response.is_permanent_redirect:
+            location = response.headers.get('Location')
+            if not location:
+                return response
+            url = urljoin(url, location)
+            continue
+        return response
+    return None
+
+def is_valid_image_url(url):
+    try:
+        response = _safe_head(url)
+        if response is None:
             return False
-        response = requests.head(url, allow_redirects=True, timeout=5)
         content_type = response.headers.get('Content-Type', '')
         return content_type.startswith('image/')
     except Exception:
@@ -87,16 +133,15 @@ def is_valid_image_url(url):
 
 def is_valid_stl_url(url):
     try:
-        result = urlparse(url)
-        if result.scheme not in ('http', 'https') or not result.netloc:
+        response = _safe_head(url)
+        if response is None:
             return False
-        response = requests.head(url, allow_redirects=True, timeout=5)
         content_type = response.headers.get('Content-Type', '')
         stl_content_types = ('model/stl', 'model/x.stl-ascii', 'model/x.stl-binary', 'application/sla')
         if any(content_type.startswith(ct) for ct in stl_content_types):
             return True
         if content_type.startswith('application/octet-stream') or not content_type:
-            return result.path.lower().endswith('.stl')
+            return urlparse(url).path.lower().endswith('.stl')
         return False
     except Exception:
         return False
