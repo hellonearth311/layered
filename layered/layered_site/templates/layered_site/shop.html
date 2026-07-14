@@ -10,28 +10,23 @@
     <section class="item-list">
         <h2>Items</h2>
         {% if items %}
-            <div>
+            <div class="item-grid">
                 {% for item in items %}
                     {% if not item.deleted %}
                     <div class="item-card" data-item-id="{{ item.id }}">
-                        <div class="card-row">
-                            <div class="card-main">
-                                <img src="{{ item.imageUrl }}" alt="{{ item.name }}" loading="lazy" style="max-width: 30%; max-height: 200px; height: auto;">
-                                <br>
-                                <strong>{{ item.name }}</strong>
-
-                                <p>{{ item.description }}</p>
-                                <p>{{ item.cost }} layers</p> 
-                                <form action="{% url 'item_detail' item.id %}" method="get">
-                                    <button type="submit">Order</button>
-                                </form>
-
-                            </div>
-                        </div>
+                        {% if item.imageUrl %}
+                            <img src="{{ item.imageUrl }}" alt="{{ item.name }}" loading="lazy" class="item-card-image">
+                        {% endif %}
+                        <strong>{{ item.name }}</strong>
+                        <p>{{ item.description }}</p>
+                        <p class="item-card-cost">{{ item.cost }} layers</p>
+                        <form action="{% url 'item_detail' item.id %}" method="get">
+                            <button type="submit">Order</button>
+                        </form>
                     </div>
                     {% endif %}
                 {% endfor %}
-                </div>
+            </div>
         {% else %}
             <p>No items in the shop yet! Check back later.</p>
         {% endif %}

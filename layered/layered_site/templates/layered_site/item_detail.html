@@ -7,31 +7,36 @@
 <div class="content">
     {% include "root/_messages.html" %}
 
-    <h1>{{ item.name }}</h1>
+    <p><a href="{% url 'shop' %}">← Back to shop</a></p>
 
-    <p>{{ item.description }}</p>
-    <p>{{ item.cost }} layers</p>
+    <div class="item-detail">
+        <div class="item-detail-media">
+            {% if item.imageUrl %}
+                <img src="{{ item.imageUrl }}" alt="{{ item.name }}" loading="lazy">
+            {% else %}
+                <p>No image available for this item yet.</p>
+            {% endif %}
+        </div>
+        <div class="item-detail-info">
+            <h1>{{ item.name }}</h1>
+            <p class="item-detail-cost">{{ item.cost }} layers</p>
+            <p>{{ item.description }}</p>
 
-    {% if item.imageUrl %}
-    <img src="{{ item.imageUrl }}" alt="{{ item.name }}" loading="lazy">
-    {% else %}
-    <p>No image available for this item yet.</p>
-    {% endif %}
+            <form action="{% url 'order_item' item.id %}" method="post" class="order-form">
+                {% csrf_token %}
+                <label>
+                    Quantity
+                    <input name="quantity" type="number" min="1" value="1" required>
+                </label>
 
-    <p><a href="{% url 'shop' %}">Back to shop</a></p>
-    <form action="{% url 'order_item' item.id %}" method="post">
-        {% csrf_token %}
-        <label>
-            Quantity
-            <input name="quantity" type="number" min="1" value="1" required>
-        </label>
+                <label>
+                    Notes
+                    <textarea name="user_notes" maxlength="100" placeholder="Optional order notes"></textarea>
+                </label>
 
-        <label>
-            Notes
-            <textarea name="user_notes" maxlength="100" placeholder="Optional order notes"></textarea>
-        </label>
-
-        <button type="submit">Order</button>
-    </form>
-</div>  
+                <button type="submit">Order</button>
+            </form>
+        </div>
+    </div>
+</div>
 {% endblock %}

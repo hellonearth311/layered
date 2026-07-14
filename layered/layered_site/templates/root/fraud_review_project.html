@@ -16,133 +16,45 @@
 <script type="module" src="{% static 'layered_site/stl_viewer.js' %}"></script>
 <div class="content">
     {% include "root/_messages.html" %}
-    <h1>Fraud Review Project "{{ ship.project.title }}" by {{ ship.project.owner.hackclub_profile.slack_username }}</h1>
-    <p>{{ ship.project.description }}</p>
-    <a href="{{ ship.project.printablesUrl }}">View on Printables</a>
-    {% if ship.project.editor_model_url %}
-        <br>
-        <a href="{{ ship.project.editor_model_url }}" target="_blank" rel="noreferrer noopener">Download editor model</a> ({{ ship.project.editor_name }})
-    {% endif %}
-    {% if ship.project.locked %}
-        <p style="color: red;"><strong>Locked</strong></p>
-    {% endif %}
-    <br>
-    <br>
-    <h2>Journal Entries</h2>
-    {% for journal in journals %}
-        <div class="journal-card">
-            <h3>{{ journal.title }}</h3>
-            <p>{{ journal.time_spent }} minutes</p>
-            <p id="journal-content">{{ journal.text }}</p>
-            <div class="journal-media">
-                {% if journal.image_url %}
-                    <img src="{{ journal.image_url }}" alt="{{ journal.title }}" class="journal-image">
+    <div class="review-layout">
+        <div class="review-main">
+            {% include "root/_review_project_header.html" with heading="Fraud Review Project" show_lock=True %}
+            {% include "root/_review_journals.html" with journal_empty="No journal entries. Go punish the people that reviewed this before u gng" %}
+            {% include "root/_review_history.html" %}
+        </div>
+        <aside class="review-sidebar">
+            <h2>Review</h2>
+            <p><strong>Logged time:</strong> {{ logged_time }} minutes</p>
+            <p><strong>T2 deductions:</strong> {{ deductions }} minutes</p>
+            <p><strong>Net time (payout default):</strong> {{ total_time }} minutes</p>
+            <form action="{% url 't3_decision' ship.id %}" method="POST" class="review-form">
+                {% csrf_token %}
+                <div class="form-row">
+                    <input type="text" name="internal_notes" placeholder="Internal Notes" required>
+                </div>
+                <div class="form-row">
+                    <label for="payout_time">Payout Time:</label>
+                    <input type="text" id="payout_time" name="payout_time" placeholder="Payout Time (minutes)" value="{{ total_time }}" required>
+                </div>
+                <div class="form-row">
+                    <label for="airtable_time">Airtable Time:</label>
+                    <input type="text" id="airtable_time" name="airtable_time" placeholder="Airtable Time (minutes)" value="{{ total_time }}" required>
+                </div>
+                <div class="form-row">
+                    <select id="decision" name="decision">
+                        <option value="T1">Return to T1</option>
+                        <option value="P">Return to Printers</option>
+                        <option value="T2">Return to T2</option>
+                        <option value="A">Approve</option>
+                    </select>
+                </div>
+                {% if ship.project.locked %}
+                    <button type="submit" disabled title="Can't review a locked project" id="submit_btn">Submit</button>
+                {% else %}
+                    <button type="submit" id="submit_btn">Submit</button>
                 {% endif %}
-                {% if journal.model_url %}
-                    <div class="stl-viewer" data-stl-url="{{ journal.model_url }}"></div>
-                {% endif %}
-            </div>
-            {% if journal.model_url %}
-                <p><a href="{{ journal.model_url }}" target="_blank" rel="noreferrer noopener">Download STL</a></p>
-            {% endif %}
-        </div>
-        <br>
-        <br>
-    {% empty %}
-    <p>No journal entries. Go punish the people that reviewed this before u gng</p>
-    {% endfor %}
-    <h1>Review History</h1>
-    <h2>T1 actions</h2>
-    {% for t1_review in ship.t1_reviews.all %}
-        <div class="review-card">
-            <h3>Review {{ forloop.counter }}</h3>
-            <p><strong>Approved:</strong> {{ t1_review.approved }} at {{ t1_review.reviewed_at }} by {{ t1_review.reviewer.hackclub_profile.slack_username }}</p>
-            <p><strong>Feedback:</strong> {{ t1_review.feedback }}</p>
-            <p><strong>Internal:</strong> {{ t1_review.internal_notes }}</p>
-            <p><strong>Print:</strong> {{ t1_review.print }}</p>
-            <br>
-            <br>
-        </div>
-    {% empty %}
-        <p>No T1 reviews yet.</p>
-    {% endfor %}
-    <h2>Printer actions</h2>
-    {% for print in ship.prints.all %}
-        <div class="review-card">
-            <h3>Print {{ forloop.counter }}</h3>
-            {% if print.finished_time %}
-                <p><strong>Action:</strong> {{ print.get_decision_display }} at {{ print.finished_time }} by {{ print.printer.hackclub_profile.slack_username }}</p>
-            {% else %}
-                <p><strong>Action:</strong> {{ print.get_decision_display }} at {{ print.claimed_time }} by {{ print.printer.hackclub_profile.slack_username }}</p>
-            {% endif %}
-                <p><strong>Weight:</strong> {{ print.weight }}</p>
-                <p><strong>Feedback:</strong> {{ print.feedback }}</p>
-                <p><strong>Internal:</strong> {{ print.internal_notes }}</p>
-            {% if print.image_url %}
-                <p><strong>Image:</strong> <a href="{{ print.image_url }}" target="_blank" rel="noreferrer">{{ print.image_url }}</a></p>
-            {% endif %}
-            <br>
-            <br>
-        </div>
-    {% empty %}
-        <p>No printer actions yet.</p>
-    {% endfor %}
-    <h2>T2 actions</h2>
-    {% for t2_review in ship.t2_reviews.all %}
-        <div class="review-card">
-            <h3>Review {{ forloop.counter }}</h3>
-            <p><strong>Decision:</strong> {{ t2_review.get_decision_display }} at {{ t2_review.reviewed_at }} by {{ t2_review.reviewer.hackclub_profile.slack_username }}</p>
-            <p><strong>Deductions:</strong> {{ t2_review.deductions }}</p>
-            <p><strong>Feedback:</strong> {{ t2_review.feedback }}</p>
-            <p><strong>Justification:</strong> {{ t2_review.justification }}</p>
-            <br>
-            <br>
-        </div>
-    {% empty %}
-        <p>No T2 reviews yet.</p>
-    {% endfor %}
-
-    <h1>Review</h1>
-    <p><strong>Logged time:</strong> {{ logged_time }} minutes</p>
-    <p><strong>T2 deductions:</strong> {{ deductions }} minutes</p>
-    <p><strong>Net time (payout default):</strong> {{ total_time }} minutes</p>
-    <form action="{% url 't3_decision' ship.id %}" method="POST">
-        {% csrf_token %}
-        <input type="text" name="internal_notes" placeholder="Internal Notes" style="width: 250px;" required>
-        <br>
-        <label for="payout_time">Payout Time:</label>
-        <input type="text" name="payout_time" placeholder="Payout Time (minutes)" value="{{ total_time }}" required>
-        <br>
-        <label for="airtable_time">Airtable Time:</label>
-        <input type="text" name="airtable_time" placeholder="Airtable Time (minutes)" value="{{ total_time }}" required>
-        <br>
-        <br>
-        <select id="decision" name="decision">
-            <option value="T1">Return to T1</option>
-            <option value="P">Return to Printers</option>
-            <option value="T2">Return to T2</option>
-            <option value="A">Approve</option>
-        </select>
-        <br>
-        <br>
-        {% if ship.project.locked %}
-            <button type="submit" disabled title="Can't review a locked project" id="submit_btn">Submit</button>
-        {% else %}
-            <button type="submit" id="submit_btn">Submit</button>
-        {% endif %}
-    </form>
-    <br>
-    <br>
-    {% if ship.project.locked %}
-        <form method="post" action="{% url 'unlock_project' ship.project.id %}">
-            {% csrf_token %}
-            <button type="submit" style="color: red;">Unlock</button>
-        </form>
-    {% else %}
-        <form method="post" action="{% url 'lock_project' ship.project.id %}">
-            {% csrf_token %}
-            <button type="submit" style="color: red;">Lock</button>
-        </form>
-    {% endif %}
+            </form>
+        </aside>
+    </div>
 </div>
 {% endblock %}

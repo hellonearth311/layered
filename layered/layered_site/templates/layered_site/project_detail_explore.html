@@ -17,33 +17,42 @@
 <div class="content">
     {% include "root/_messages.html" %}
     <div class="project-info">
-        <h1>{{ project.title }}</h1>
-        <p>{{ project.description }}</p>
-        <p>{{ time_spent }}</p>
-        {% if project.printablesUrl %}
-            <p><a href="{{ project.printablesUrl }}" target="_blank" rel="noreferrer noopener">
-                View on Printables
-            </a></p>
-            <p>{{ printablesData.makesCount }} makes on Printables</p>
-        {% endif %}
-        {% if project.editor_model_url %}
-            <p><a href="{{ project.editor_model_url }}" target="_blank" rel="noreferrer noopener">Download editor model</a> ({{ project.editor_name }})</p>
-        {% endif %}
-        <p>by {{ project.owner.hackclub_profile.slack_username }}</p>
-        {% if perms.layered_site.t2_review or perms.layered_site.organizer or perms.layered_site.t3_review %}
-            {% if project.locked %}
-                <form method="post" action="{% url 'unlock_project' project.id %}">
-                    {% csrf_token %}
-                    <button type="submit" style="color: red;">Unlock</button>
-                </form>
-            {% else %}
-                <form method="post" action="{% url 'lock_project' project.id %}">
-                    {% csrf_token %}
-                    <button type="submit" style="color: red;">Lock</button>
-                </form>
+        <div class="card-row">
+            <div class="card-main">
+                <h1>{{ project.title }}</h1>
+                <p id="time_spent">Time spent: {{ time_spent }}</p>
+                <p>by {{ project.owner.hackclub_profile.slack_username }}</p>
+                {% if project.locked %}
+                    <p style="color: red; font-weight: bold;">Locked</p>
+                {% endif %}
+                <p>{{ project.description }}</p>
+                {% if project.printablesUrl %}
+                    <p>
+                        <a href="{{ project.printablesUrl }}" target="_blank" rel="noreferrer noopener">View on Printables</a>
+                        — {{ printablesData.makesCount }} makes on Printables
+                    </p>
+                {% endif %}
+                {% if project.editor_model_url %}
+                    <p><a href="{{ project.editor_model_url }}" target="_blank" rel="noreferrer noopener">Download editor model</a> ({{ project.editor_name }})</p>
+                {% endif %}
+            </div>
+            {% if perms.layered_site.t2_review or perms.layered_site.organizer or perms.layered_site.t3_review %}
+                <div class="card-controls">
+                    {% if project.locked %}
+                        <form method="post" action="{% url 'unlock_project' project.id %}">
+                            {% csrf_token %}
+                            <button type="submit" style="color: red;">Unlock</button>
+                        </form>
+                    {% else %}
+                        <form method="post" action="{% url 'lock_project' project.id %}">
+                            {% csrf_token %}
+                            <button type="submit" style="color: red;">Lock</button>
+                        </form>
+                    {% endif %}
+                </div>
             {% endif %}
-        {% endif %}
-        <br>
+        </div>
+    </div>
 
     <div class="journal-section">
     <h2>Journal Entries</h2>

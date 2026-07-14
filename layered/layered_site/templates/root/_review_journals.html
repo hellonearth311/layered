@@ -1,0 +1,24 @@
+{# expects: journals; optional: journal_empty #}
+<h2>Journal Entries</h2>
+<div class="journal-list">
+    {% for journal in journals %}
+        <div class="journal-card">
+            <h3>{{ journal.title }}</h3>
+            <p>{{ journal.time_spent }} minutes</p>
+            <p id="journal-content">{{ journal.text }}</p>
+            <div class="journal-media">
+                {% if journal.image_url %}
+                    <img src="{{ journal.image_url }}" alt="{{ journal.title }}" class="journal-image">
+                {% endif %}
+                {% if journal.model_url %}
+                    <div class="stl-viewer" data-stl-url="{{ journal.model_url }}"></div>
+                {% endif %}
+            </div>
+            {% if journal.model_url %}
+                <p><a href="{{ journal.model_url }}" target="_blank" rel="noreferrer noopener">Download STL</a></p>
+            {% endif %}
+        </div>
+    {% empty %}
+        <p>{{ journal_empty|default:"No journal entries yet." }}</p>
+    {% endfor %}
+</div>

@@ -12,35 +12,36 @@
     <section class="item-list">
         <h3>Items</h3>
         {% if items %}
-            <div>
+            <div class="item-grid">
                 {% for item in items %}
                     {% if not item.deleted %}
                     <div class="item-card" data-item-id="{{ item.id }}">
                         <div class="card-row">
                             <div class="card-main">
-                                <img src="{{ item.imageUrl }}" alt="{{ item.name }}" loading="lazy" style="max-width: 100%; max-height: 400px; height: auto;">
-                                <br>
+                                {% if item.imageUrl %}
+                                    <img src="{{ item.imageUrl }}" alt="{{ item.name }}" loading="lazy" class="item-card-image">
+                                {% endif %}
                                 <strong><a href="{% url 'item_detail' item.id %}">{{ item.name }}</a></strong>
                                 <p>{{ item.description }}</p>
-                                <p>{{ item.cost }} layers</p>        
+                                <p class="item-card-cost">{{ item.cost }} layers</p>
                             </div>
 
                             <div class="card-controls">
-                                    <button type="button" class="menu-toggle" aria-haspopup="true" aria-expanded="false">⋯</button>
-                                    <div class="card-dropdown" aria-hidden="true">
-                                        <button type="button" class="dropdown-item open-edit" data-item-id="{{ item.id }}" data-name="{{ item.name }}" data-description="{{ item.description }}" data-cost="{{ item.cost }}" data-image-url="{{ item.imageUrl }}">Edit</button>
+                                <button type="button" class="menu-toggle" aria-haspopup="true" aria-expanded="false">⋯</button>
+                                <div class="card-dropdown" aria-hidden="true">
+                                    <button type="button" class="dropdown-item open-edit" data-item-id="{{ item.id }}" data-name="{{ item.name }}" data-description="{{ item.description }}" data-cost="{{ item.cost }}" data-image-url="{{ item.imageUrl }}">Edit</button>
 
-                                        <form action="{% url 'delete_item' item.id %}" method="post" class="dropdown-item delete-form">
-                                            {% csrf_token %}
-                                            <button type="submit" class="delete-button">Delete</button>
-                                        </form>
-                                    </div>
+                                    <form action="{% url 'delete_item' item.id %}" method="post" class="dropdown-item delete-form">
+                                        {% csrf_token %}
+                                        <button type="submit" class="delete-button">Delete</button>
+                                    </form>
+                                </div>
                             </div>
                         </div>
                     </div>
                     {% endif %}
                 {% endfor %}
-                </div>
+            </div>
         {% else %}
             <p>No items in the shop yet! Create one you filthy admin!!!!!</p>
         {% endif %}

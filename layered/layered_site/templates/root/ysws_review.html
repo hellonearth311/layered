@@ -8,18 +8,21 @@
     {% include "root/_messages.html" %}
     <h1>YSWS Review Dash</h1>
     <h3>T2 Reviews</h3>
-    {% for ship in ships %}
-        <div class="project-card" data-project-id="{{ ship.project.id }}">
-            <div class="card-row">
-                <div class="card-main">
-                    <a href="{% url 'ysws_review_project' ship.id %}"><strong>{{ ship.project.title }}</strong></a>
-                    <p>{{ ship.project.description }}</p>
-                    <p>by {{ ship.project.owner.hackclub_profile.slack_username }}</p>
-                    <p>type: {{ ship.project.editor_name }}</p>
+    <div class="card-grid">
+        {% for ship in ships %}
+            <div class="project-card" data-project-id="{{ ship.project.id }}">
+                <div class="card-row">
+                    <div class="card-main">
+                        <a href="{% url 'ysws_review_project' ship.id %}"><strong>{{ ship.project.title }}</strong></a>
+                        <p>by {{ ship.project.owner.hackclub_profile.slack_username }}</p>
+                        <p>Type: {{ ship.project.editor_name }}</p>
+                        <p>{{ ship.project.description }}</p>
+                    </div>
                 </div>
             </div>
-        </div>
-        <br>
-    {% endfor%}
+        {% empty %}
+            <p>No projects awaiting T2 review.</p>
+        {% endfor %}
+    </div>
 </div>
 {% endblock %}

@@ -9,7 +9,7 @@
     <h1>Audit Log</h1>
     <h3>A record of every admin action</h3>
 
-    <form method="get" class="audit-filters" id="auditFilters" style="margin-bottom: 1rem;">
+    <form method="get" class="audit-filters" id="auditFilters">
         <label>
             Action:
             <select name="action" id="auditActionFilter">
@@ -30,7 +30,7 @@
 
     {% if logs %}
         {% for log in logs %}
-            <div class="audit-entry" style="border: 1px solid #ccc; border-radius: 6px; padding: 0.75rem 1rem; margin-bottom: 0.75rem;">
+            <div class="audit-entry">
                 <div class="audit-header">
                     <strong>{{ log.action }}</strong>
                     &mdash; {{ log.created_at }}
@@ -54,8 +54,8 @@
                         <table class="audit-data">
                             {% for key, value in log.form_data.items %}
                                 <tr>
-                                    <th style="text-align: left; padding-right: 1rem; vertical-align: top;">{{ key }}</th>
-                                    <td style="white-space: pre-wrap; word-break: break-word;">{{ value }}</td>
+                                    <th>{{ key }}</th>
+                                    <td>{{ value }}</td>
                                 </tr>
                             {% endfor %}
                         </table>
@@ -70,8 +70,8 @@
                         <table class="audit-data">
                             {% for key, value in log.metadata.items %}
                                 <tr>
-                                    <th style="text-align: left; padding-right: 1rem; vertical-align: top;">{{ key }}</th>
-                                    <td style="white-space: pre-wrap; word-break: break-word;">{{ value }}</td>
+                                    <th>{{ key }}</th>
+                                    <td>{{ value }}</td>
                                 </tr>
                             {% endfor %}
                         </table>
@@ -81,7 +81,7 @@
         {% endfor %}
 
         {% if page.has_other_pages %}
-            <div class="pagination" style="margin-top: 1rem;">
+            <div class="pagination">
                 {% if page.has_previous %}
                     <a href="?action={{ action_filter }}&actor={{ actor_filter }}&page={{ page.previous_page_number }}">&laquo; Previous</a>
                 {% endif %}

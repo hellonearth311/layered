@@ -1,0 +1,55 @@
+{# expects: ship #}
+<h2>Review History</h2>
+<div class="review-history">
+    <section class="review-history-group">
+        <h3>T1 actions</h3>
+        {% for t1_review in ship.t1_reviews.all %}
+            <div class="review-card">
+                <h4>Review {{ forloop.counter }}</h4>
+                <p><strong>Approved:</strong> {{ t1_review.approved }} at {{ t1_review.reviewed_at }} by {{ t1_review.reviewer.hackclub_profile.slack_username }}</p>
+                <p><strong>Feedback:</strong> {{ t1_review.feedback }}</p>
+                <p><strong>Internal:</strong> {{ t1_review.internal_notes }}</p>
+                <p><strong>Print:</strong> {{ t1_review.print }}</p>
+            </div>
+        {% empty %}
+            <p>No T1 reviews yet.</p>
+        {% endfor %}
+    </section>
+
+    <section class="review-history-group">
+        <h3>Printer actions</h3>
+        {% for print in ship.prints.all %}
+            <div class="review-card">
+                <h4>Print {{ forloop.counter }}</h4>
+                {% if print.finished_time %}
+                    <p><strong>Action:</strong> {{ print.get_decision_display }} at {{ print.finished_time }} by {{ print.printer.hackclub_profile.slack_username }}</p>
+                {% else %}
+                    <p><strong>Action:</strong> {{ print.get_decision_display }} at {{ print.claimed_time }} by {{ print.printer.hackclub_profile.slack_username }}</p>
+                {% endif %}
+                <p><strong>Weight:</strong> {{ print.weight }}</p>
+                <p><strong>Feedback:</strong> {{ print.feedback }}</p>
+                <p><strong>Internal:</strong> {{ print.internal_notes }}</p>
+                {% if print.image_url %}
+                    <p><strong>Image:</strong> <a href="{{ print.image_url }}" target="_blank" rel="noreferrer">{{ print.image_url }}</a></p>
+                {% endif %}
+            </div>
+        {% empty %}
+            <p>No printer actions yet.</p>
+        {% endfor %}
+    </section>
+
+    <section class="review-history-group">
+        <h3>T2 actions</h3>
+        {% for t2_review in ship.t2_reviews.all %}
+            <div class="review-card">
+                <h4>Review {{ forloop.counter }}</h4>
+                <p><strong>Decision:</strong> {{ t2_review.get_decision_display }} at {{ t2_review.reviewed_at }} by {{ t2_review.reviewer.hackclub_profile.slack_username }}</p>
+                <p><strong>Deductions:</strong> {{ t2_review.deductions }}</p>
+                <p><strong>Feedback:</strong> {{ t2_review.feedback }}</p>
+                <p><strong>Justification:</strong> {{ t2_review.justification }}</p>
+            </div>
+        {% empty %}
+            <p>No T2 reviews yet.</p>
+        {% endfor %}
+    </section>
+</div>

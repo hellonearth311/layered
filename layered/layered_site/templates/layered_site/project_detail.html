@@ -17,60 +17,65 @@
 <div class="content">
     {% include "root/_messages.html" %}
     <div class="project-info">
-        <h1>{{ project.title }}</h1>
-        <p>{{ project.description }}</p>
-        <p>{{ time_spent }}</p>
-        {% if project.printablesUrl %}
-            <p><a href="{{ project.printablesUrl }}" target="_blank" rel="noreferrer noopener">
-                View on Printables
-            </a></p>
-            <p>{{ printablesData.makesCount }} makes on Printables</p>
-        {% endif %}
-        {% if project.editor_model_url %}
-            <p><a href="{{ project.editor_model_url }}" target="_blank" rel="noreferrer noopener">Download editor model</a> ({{ project.editor_name }})</p>
-        {% endif %}
-        {% if project.locked %}
-            <p style="color: red; font-weight: bold;">Locked</p>
-        {% endif %}
-        {% if project.owner == user %}
-            {% if not project.locked %}
+        <div class="card-row">
+            <div class="card-main">
+                <h1>{{ project.title }}</h1>
+                <p id="time_spent">Time spent: {{ time_spent }}</p>
+                {% if project.locked %}
+                    <p style="color: red; font-weight: bold;">Locked</p>
+                {% endif %}
+                <p>{{ project.description }}</p>
+                {% if project.printablesUrl %}
+                    <p>
+                        <a href="{{ project.printablesUrl }}" target="_blank" rel="noreferrer noopener">View on Printables</a>
+                        - {{ printablesData.makesCount }} makes on Printables
+                    </p>
+                {% endif %}
+                {% if project.editor_model_url %}
+                    <p><a href="{{ project.editor_model_url }}" target="_blank" rel="noreferrer noopener">Download editor model</a> ({{ project.editor_name }})</p>
+                {% endif %}
+            </div>
+            {% if project.owner == user %}
+                <div class="card-controls">
+                    {% if can_ship %}
+                        <form action="{% url 'ship_project' project.id %}" method="post">
+                            {% csrf_token %}
+                            <button type="submit">Ship</button>
+                        </form>
+                    {% else %}
+                        <button type="button" disabled title="{{ ship_disabled_reason }}">Ship</button>
+                    {% endif %}
+                    <form action="{% url 'delete_project' project.id %}" method="post">
+                        {% csrf_token %}
+                        <button type="submit" style="color: red;">Delete</button>
+                    </form>
+                </div>
+            {% endif %}
+        </div>
+        {% if project.owner == user and not project.locked %}
+            <div class="project-editor-upload">
                 <form action="{% url 'update_editor_model' project.id %}" method="post" enctype="multipart/form-data">
                     {% csrf_token %}
                     <label for="editor_model_file">Upload your editor model file</label>
                     <input type="file" id="editor_model_file" name="editor_model_file" accept="{{ allowed_editor_extensions }}">
-                    <br>
                     <label for="editor_model_link">Or paste a link to it</label>
                     <input type="url" id="editor_model_link" name="editor_model_link" placeholder="https://...">
-                    <br>
                     <button type="submit">Save editor model</button>
                 </form>
-            {% endif %}
-            <br>
-            {% if can_ship %}
-                <form action="{% url 'ship_project' project.id %}" method="post">
-                    {% csrf_token %}
-                    <button type="submit">Ship</button>
-                </form>
-            {% else %}
-                <button type="button" disabled title="{{ ship_disabled_reason }}">Ship</button>
-            {% endif %}
-            <form action="{% url 'delete_project' project.id %}" method="post">
-                {% csrf_token %}
-                <button type="submit" style="color: red;">Delete</button>
-            </form>
+            </div>
         {% endif %}
-        <br>
     </div>
     {% if project.owner == user %}
+    <h2>Ships</h2>
     <div class="ships-section">
         {% if ships_with_feedback %}
             {% for ship, feedback in ships_with_feedback %}
                 <div class="ship-card">
                     <h4>Ship {{ forloop.counter }}</h4>
-                    <p1><strong>Status:</strong> {{ ship.get_status_display }}</p1>
-                    <br>
-                    <p1><strong>Latest Feedback:</strong> {{ feedback }}</p1>
+                    <p><strong>Status:</strong> {{ ship.get_status_display }}</p>
+                    <p><strong>Latest Feedback:</strong> {{ feedback }}</p>
                 </div>
+                <br>
             {% endfor %}
         {% else %}
             <p>No ships yet!</p>
@@ -109,6 +114,7 @@
                 {% endif %}
             </form>
         {% endif %}
+        <br>
         {% if journals %}
             {% for journal in journals %}
                 <div class="journal-card">
