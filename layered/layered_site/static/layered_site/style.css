@@ -427,6 +427,15 @@ dialog#editProjectPopup label.checkbox-label input {
     height: auto;
 }
 
+.journal-card {
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    padding: 16px;
+    position: relative;
+    width: fit-content;
+}
+
+
 #journal-content {
     max-width: 45ch;
     overflow-wrap: break-word;
