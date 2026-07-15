@@ -62,6 +62,11 @@
                     >edit project</button>
                     <br>
                     <a href="{% url 'project_detail_explore' project.id %}" class="link-button" target="_blank" rel="noopener">view on explore</a>
+                    <br>
+                    <form method="POST" action="{% url 'db_delete_project' project.id %}" class="db-delete-project-form" data-title="{{ project.title|default:'' }}" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="link-button" style="color: red;">db delete</button>
+                    </form>
                 </td>
             </tr>
             {% endfor %}
@@ -132,6 +137,17 @@
         });
 
         if (cancelBtn) cancelBtn.addEventListener('click', () => dialog.close());
+    })();
+
+    (function () {
+        document.querySelectorAll('.db-delete-project-form').forEach((form) => {
+            form.addEventListener('submit', (event) => {
+                const title = form.dataset.title || 'this project';
+                if (!confirm('Permanently delete "' + title + '" from the database? This cannot be undone.')) {
+                    event.preventDefault();
+                }
+            });
+        });
     })();
 
     (function () {

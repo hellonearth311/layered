@@ -215,3 +215,28 @@ def admin_edit_project(request, project_id):
     })
 
     return redirect("manage_projects")
+
+@staff_member_required
+@check_perms(["layered_site.organizer"])
+@require_POST
+def db_delete_project(request, project_id):
+    project = get_object_or_404(Project, id=project_id)
+    title = project.title
+
+    journals = project.journals.all()
+    ships = project.ships.all()
+
+    try:
+        for journal in journals:
+            journal.delete()
+
+        for ship in ships:
+            ship.delete()
+
+        project.delete()
+    except Exception as e:
+        messages.error(request, f"DB delete failed, {e}")
+        return redirect("manage_projects")
+    
+    messages.success(request, f"Removed {title} from the DB")
+    return redirect("manage_projects")
