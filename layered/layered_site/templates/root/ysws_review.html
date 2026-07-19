@@ -1,14 +1,14 @@
 {% extends 'root/_base_root.html' %}
 
 {% block page_id %}admin-ysws-review-page{% endblock %}
-{% block title %}YSWS Review{% endblock %}
+{% block title %}YSWS Review Dash{% endblock %}
 
 {% block content %}
 <div class="content">
     {% include "root/_messages.html" %}
     <h1>YSWS Review Dash</h1>
     <section class="project-list">
-        <h3>Ships</h3>
+        <h2>Ships</h2>
             <table class="users-table">
                 <thead>
                     <tr>
@@ -26,8 +26,10 @@
                         {% if not ship.project.deleted %}
                         <tr data-project-id="{{ ship.project.id }}">
                             <td><a href="{% url 'ysws_review_project' ship.id %}">{{ ship.project.title }}</a></td>
-                            <td>{{ ship.project.owner.hackclub_profile.slack_username }}</td>
-                            <td>{{ ship.project.editor_name }}</td>
+                            <td>@{{ ship.project.owner.hackclub_profile.slack_username }}</td>
+                            <td>
+                                {{ ship.project.editor_name }}
+                            </td>
                             <td>{{ ship.time_spent_display }}</td>
                             <td>{{ ship.created_at|date:"M j, Y" }}</td>
                             <td>{{ ship.project.description|truncatechars:80 }}</td>
@@ -42,6 +44,8 @@
                             </td>
                         </tr>
                         {% endif %}
+                    {% empty %}
+                        <tr><td colspan="7">No projects awaiting T2 review.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>

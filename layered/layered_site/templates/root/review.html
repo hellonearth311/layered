@@ -9,7 +9,6 @@
     <h1>Review Dash</h1>
     <section class="project-list">
         <h2>Ships</h2>
-        {% if ships %}
             <table class="users-table">
                 <thead>
                     <tr>
@@ -26,7 +25,7 @@
                     {% for ship in ships %}
                         {% if not ship.project.deleted %}
                         <tr data-project-id="{{ ship.project.id }}">
-                            <td><a href="{% url 'ysws_review_project' ship.id %}">{{ ship.project.title }}</a></td>
+                            <td><a href="{% url 'review_project' ship.id %}">{{ ship.project.title }}</a></td>
                             <td>@{{ ship.project.owner.hackclub_profile.slack_username }}</td>
                             <td>
                                 {{ ship.project.editor_name }}
@@ -35,7 +34,7 @@
                             <td>{{ ship.created_at|date:"M j, Y" }}</td>
                             <td>{{ ship.project.description|truncatechars:80 }}</td>
                             <td>
-                                <a href="{% url 'ysws_review_project' ship.id %}">Review project</a>
+                                <a href="{% url 'review_project' ship.id %}">Review project</a>
                                 <br>
                                 {% if ship.project.printablesUrl %}
                                     <a href="{{ ship.project.printablesUrl }}" target="_blank" rel="noreferrer">Printables link</a>
@@ -45,12 +44,11 @@
                             </td>
                         </tr>
                         {% endif %}
+                    {% empty %}
+                        <tr><td colspan="7">No projects awaiting T1 review.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
-        {% else %}
-            <p>No projects yet. Create your first one!</p>
-        {% endif %}
     </section>
 </div>
 {% endblock %}
