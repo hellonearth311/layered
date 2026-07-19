@@ -6,8 +6,6 @@ from django.core.paginator import Paginator
 from ...models import AuditLog
 from ..helpers import check_perms
 
-import os
-
 @staff_member_required
 @check_perms(["layered_site.organizer"])
 def audit_log(request):
@@ -48,8 +46,3 @@ def audit_log(request):
         "target_types": target_types,
         "target_type_filter": target_type_filter,
     })
-
-@staff_member_required
-@check_perms(["layered_site.organizer"])
-def metrics(request):
-    return render(request, "root/metrics.html")

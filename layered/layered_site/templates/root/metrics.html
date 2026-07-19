@@ -1,11 +1,226 @@
 {% extends "root/_base_root.html" %}
 {% block page_id %}admin-metrics{% endblock %}
+{% block title %}Metrics{% endblock %}
 {% block content %}
-<div class="content">
+
+<div class="content metrics-page">
     {% include "root/_messages.html" %}
     <h1>Metrics</h1>
-    <h2>Projects</h2>
-    <h2>Shop</h2>
-    <h2>Misc</h2>
+    <p class="metrics-generated">Generated {{ generated_at|date:"Y-m-d H:i" }}</p>
+
+    <section class="metrics-section">
+        <h2>Projects</h2>
+        <div class="stat-grid">
+            <div class="stat-card accent">
+                <div class="stat-value">{{ projects.total }}</div>
+                <div class="stat-label">Total projects</div>
+                <div class="stat-sub">{{ projects.active }} active &middot; {{ projects.deleted }} deleted</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ projects.locked }}</div>
+                <div class="stat-label">Locked projects</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ projects.with_ships }}</div>
+                <div class="stat-label">Projects with ships</div>
+                <div class="stat-sub">{{ projects.no_ship }} active never shipped</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ projects.last_7 }}</div>
+                <div class="stat-label">New in last 7 days</div>
+                <div class="stat-sub">{{ projects.last_30 }} in last 30 days</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ projects.total_journals }}</div>
+                <div class="stat-label">Journal entries</div>
+                <div class="stat-sub">avg {{ projects.avg_journal_display }} each</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ projects.total_time_hours }}h</div>
+                <div class="stat-label">Total time logged</div>
+                <div class="stat-sub">{{ projects.total_time_display }}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ projects.avg_project_display }}</div>
+                <div class="stat-label">Avg time / active project</div>
+            </div>
+        </div>
+
+        <div class="chart-grid">
+            {% include "root/_metric_chart.html" with title="Projects by editor" rows=projects.editor_breakdown empty="No projects yet" %}
+        </div>
+    </section>
+
+    <section class="metrics-section">
+        <h2>Ships &amp; pipeline</h2>
+        <div class="stat-grid">
+            <div class="stat-card accent">
+                <div class="stat-value">{{ ships.total }}</div>
+                <div class="stat-label">Total ships</div>
+                <div class="stat-sub">{{ ships.last_7 }} in last 7 days</div>
+            </div>
+            <div class="stat-card warn">
+                <div class="stat-value">{{ ships.backlog_total }}</div>
+                <div class="stat-label">In queue right now</div>
+            </div>
+            <div class="stat-card good">
+                <div class="stat-value">{{ ships.finalized }}</div>
+                <div class="stat-label">Finalized</div>
+            </div>
+            <div class="stat-card bad">
+                <div class="stat-value">{{ ships.rejected }}</div>
+                <div class="stat-label">Rejected</div>
+            </div>
+        </div>
+
+        <div class="chart-grid">
+            {% include "root/_metric_chart.html" with title="Live pipeline (waiting now)" rows=ships.pipeline fill_class="warn" empty="Nothing in the pipeline" %}
+            {% include "root/_metric_chart.html" with title="All ships by status" rows=ships.by_status %}
+        </div>
+    </section>
+
+    <section class="metrics-section">
+        <h2>Reviews &amp; printing</h2>
+        <div class="stat-grid">
+            <div class="stat-card accent">
+                <div class="stat-value">{{ reviews.t1_total }}</div>
+                <div class="stat-label">T1 reviews</div>
+                <div class="stat-sub">{{ reviews.t1_print_requested }} print requested</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ reviews.t2_total }}</div>
+                <div class="stat-label">T2 reviews</div>
+                <div class="stat-sub">{{ reviews.t2_total_deductions_display }} deducted</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ reviews.t3_total }}</div>
+                <div class="stat-label">T3 / fraud reviews</div>
+                <div class="stat-sub">{{ reviews.t3_airtable_display }} airtable time</div>
+            </div>
+            <div class="stat-card good">
+                <div class="stat-value">{{ reviews.total_layers_paid }}</div>
+                <div class="stat-label">Spools paid out</div>
+                <div class="stat-sub">for {{ reviews.t3_payout_display }} approved</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ reviews.print_total }}</div>
+                <div class="stat-label">Print records</div>
+                <div class="stat-sub">{{ reviews.prints_completed }} completed</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ reviews.print_total_weight }}g</div>
+                <div class="stat-label">Filament used</div>
+                <div class="stat-sub">avg {{ reviews.print_avg_weight }}g / print</div>
+            </div>
+        </div>
+
+        <div class="chart-grid">
+            <div class="chart">
+                <h4>T1 outcomes</h4>
+                {% if reviews.t1_total %}
+                <div class="meter" title="{{ reviews.t1_approved }} approved / {{ reviews.t1_denied }} denied">
+                    <div class="meter-seg good" data-bar="{{ reviews.t1_approval_rate }}"></div>
+                    <div class="meter-seg bad" data-bar="{{ reviews.t1_denied_rate }}"></div>
+                </div>
+                <div class="meter-legend">
+                    <span><span class="swatch good"></span>Approved - {{ reviews.t1_approved }} ({{ reviews.t1_approval_rate }}%)</span>
+                    <span><span class="swatch bad"></span>Denied - {{ reviews.t1_denied }} ({{ reviews.t1_denied_rate }}%)</span>
+                </div>
+                {% else %}
+                <p class="chart-empty">No T1 reviews yet.</p>
+                {% endif %}
+            </div>
+            {% include "root/_metric_chart.html" with title="T2 decisions" rows=reviews.t2_breakdown %}
+            {% include "root/_metric_chart.html" with title="T3 decisions" rows=reviews.t3_breakdown %}
+            {% include "root/_metric_chart.html" with title="Print decisions" rows=reviews.print_breakdown %}
+            {% include "root/_metric_chart.html" with title="Top T1 reviewers" rows=reviews.top_t1 empty="No reviews yet" %}
+            {% include "root/_metric_chart.html" with title="Top T2 reviewers" rows=reviews.top_t2 empty="No reviews yet" %}
+            {% include "root/_metric_chart.html" with title="Top T3 reviewers" rows=reviews.top_t3 empty="No reviews yet" %}
+            {% include "root/_metric_chart.html" with title="Top printers" rows=reviews.top_printers empty="No prints yet" %}
+        </div>
+    </section>
+
+    <section class="metrics-section">
+        <h2>Shop</h2>
+        <div class="stat-grid">
+            <div class="stat-card accent">
+                <div class="stat-value">{{ shop.active_items }}</div>
+                <div class="stat-label">Active items</div>
+                <div class="stat-sub">{{ shop.deleted_items }} deleted</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ shop.total_orders }}</div>
+                <div class="stat-label">Total orders</div>
+            </div>
+            <div class="stat-card warn">
+                <div class="stat-value">{{ shop.pending_orders }}</div>
+                <div class="stat-label">Pending orders</div>
+                <div class="stat-sub">{{ shop.pending_value }} spools owed</div>
+            </div>
+            <div class="stat-card good">
+                <div class="stat-value">{{ shop.layers_spent }}</div>
+                <div class="stat-label">Spools spent (fulfilled)</div>
+                <div class="stat-sub">{{ shop.refunded_layers }} refunded</div>
+            </div>
+        </div>
+
+        <div class="chart-grid">
+            {% include "root/_metric_chart.html" with title="Orders by status" rows=shop.order_breakdown %}
+            {% include "root/_metric_chart.html" with title="Most ordered items" rows=shop.top_items empty="No orders yet" %}
+            {% include "root/_metric_chart.html" with title="Top fulfillers" rows=shop.top_fulfillers empty="Nothing fulfilled yet" %}
+        </div>
+    </section>
+
+    <section class="metrics-section">
+        <h2>Users &amp; economy</h2>
+        <div class="stat-grid">
+            <div class="stat-card accent">
+                <div class="stat-value">{{ users.total }}</div>
+                <div class="stat-label">Total users</div>
+                <div class="stat-sub">{{ users.last_7 }} joined in last 7 days</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ users.staff }}</div>
+                <div class="stat-label">Staff / reviewers</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ users.slack_linked }}</div>
+                <div class="stat-label">Slack linked</div>
+            </div>
+            <div class="stat-card good">
+                <div class="stat-value">{{ users.layers_in_circulation }}</div>
+                <div class="stat-label">Spools in circulation</div>
+                <div class="stat-sub">avg {{ users.avg_layers }} / user</div>
+            </div>
+        </div>
+
+        <div class="chart-grid">
+            {% include "root/_metric_chart.html" with title="Top spool holders" rows=users.top_holders empty="No users yet" %}
+        </div>
+    </section>
+
+    <section class="metrics-section">
+        <h2>Misc &amp; activity</h2>
+        <div class="stat-grid">
+            <div class="stat-card accent">
+                <div class="stat-value">{{ audit.total }}</div>
+                <div class="stat-label">Audit log entries</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ audit.last_24h }}</div>
+                <div class="stat-label">Admin actions (24h)</div>
+            </div>
+        </div>
+
+        <div class="chart-grid">
+            {% include "root/_metric_chart.html" with title="Top audit actions" rows=audit.actions wide=True empty="No activity yet" %}
+        </div>
+    </section>
 </div>
+
+<script>
+    document.querySelectorAll('[data-bar]').forEach((el) => {
+        el.style.width = el.dataset.bar + '%';
+    });
+</script>
 {% endblock %}

@@ -1,5 +1,6 @@
 from ...views.admin.dashboard import admin_dash
-from ...views.admin.misc import audit_log, metrics
+from ...views.admin.misc import audit_log
+from ...views.admin.metrics import metrics
 from ...views.admin.print import print_dash, print_project, claim_print, unclaim_print, print_decision
 from ...views.admin.review import review_dash, review_project, t1_decision
 from ...views.admin.review import ysws_review_dash, ysws_review_project, t2_decision
