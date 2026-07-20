@@ -13,7 +13,13 @@ from ..helpers import check_perms, record_audit, send_slack_dm, is_valid_image_u
 @check_perms(["layered_site.organizer", "layered_site.fulfillment"])
 def shop_dash(request):
     items = Item.objects.order_by("id")
-    return render(request, "root/shop.html", {"items": items})
+    categories = (
+        Item.objects.filter(deleted=False)
+        .order_by("category")
+        .values_list("category", flat=True)
+        .distinct()
+    )
+    return render(request, "root/shop.html", {"items": items, "categories": categories})
 
 @staff_member_required
 @check_perms(["layered_site.organizer", "layered_site.fulfillment"])
@@ -101,18 +107,19 @@ def update_order_status(request, order_id):
 @check_perms(["layered_site.organizer", "layered_site.fulfillment"])
 def create_item(request):
     name = request.POST.get("name", "").strip()
-    description = request.POST.get("description", "").strip()  
+    description = request.POST.get("description", "").strip()
     cost = request.POST.get("cost", "").strip()
     imageUrl = request.POST.get("imageUrl", "").strip()
+    category = request.POST.get("category", "").strip() or "Other"
 
     if not name:
         messages.error(request, "Name is required.")
         return redirect("shop_dash")
-    
+
     if not description:
         messages.error(request, "Description is required.")
         return redirect("shop_dash")
-    
+
     if not cost:
         messages.error(request, "Cost is required.")
         return redirect("shop_dash")
@@ -135,13 +142,15 @@ def create_item(request):
         name = name,
         description = description,
         cost = cost,
-        imageUrl = imageUrl
+        imageUrl = imageUrl,
+        category = category
     )
 
     record_audit(request, "create_item", target=f"Item #{item.id} ({item.name})", metadata={
         "item_id": item.id,
         "name": item.name,
         "cost": item.cost,
+        "category": item.category,
     })
 
     return redirect("shop_dash")
@@ -156,15 +165,16 @@ def edit_item(request, item_id):
     description = request.POST.get("description", "").strip()
     cost = request.POST.get("cost", "").strip()
     imageUrl = request.POST.get("imageUrl", "").strip()
+    category = request.POST.get("category", "").strip() or "Other"
 
     if not name:
         messages.error(request, "Name is required.")
         return redirect("shop_dash")
-    
+
     if not description:
         messages.error(request, "Description is required.")
         return redirect("shop_dash")
-    
+
     if not cost:
         messages.error(request, "Cost is required.")
         return redirect("shop_dash")
@@ -184,18 +194,20 @@ def edit_item(request, item_id):
         "description": item.description,
         "cost": item.cost,
         "imageUrl": item.imageUrl,
+        "category": item.category,
     }
 
     item.name = name
     item.description = description
     item.cost = cost
     item.imageUrl = imageUrl
+    item.category = category
     item.save()
 
     record_audit(request, "edit_item", target=f"Item #{item.id} ({item.name})", metadata={
         "item_id": item.id,
         "previous": previous,
-        "new": {"name": name, "description": description, "cost": cost, "imageUrl": imageUrl},
+        "new": {"name": name, "description": description, "cost": cost, "imageUrl": imageUrl, "category": category},
     })
 
     return redirect("shop_dash")

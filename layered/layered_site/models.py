@@ -254,6 +254,7 @@ class Item(models.Model):
 	cost = models.PositiveIntegerField()
 	deleted = models.BooleanField(default=False)
 	imageUrl = models.URLField(max_length=2048, default="https://example.com")
+	category = models.CharField(max_length=40, default="Other")
 
 	def __str__(self):
 		return f"{self.name} ({self.description}) for {self.cost} layers"
@@ -304,7 +305,6 @@ class Order(models.Model):
 			self.cost = self.item.cost
 		super().save(*args, **kwargs)
 
-# audit log model
 class AuditLog(models.Model):
 	actor = models.ForeignKey(
 		settings.AUTH_USER_MODEL,
@@ -318,9 +318,7 @@ class AuditLog(models.Model):
 	path = models.CharField(max_length=255, blank=True)
 	method = models.CharField(max_length=8, blank=True)
 	ip_address = models.CharField(max_length=64, blank=True)
-	# every value submitted through the form (csrf token stripped)
 	form_data = models.JSONField(default=dict, blank=True)
-	# resulting state / extra context about the action
 	metadata = models.JSONField(default=dict, blank=True)
 	created_at = models.DateTimeField(auto_now_add=True)
 

@@ -18,6 +18,7 @@
                         <th>Image</th>
                         <th>Name</th>
                         <th>Description</th>
+                        <th>Category</th>
                         <th>Cost</th>
                         <th>Actions</th>
                     </tr>
@@ -33,9 +34,10 @@
                             </td>
                             <td><a href="{% url 'item_detail' item.id %}">{{ item.name }}</a></td>
                             <td>{{ item.description|truncatechars:80 }}</td>
+                            <td>{{ item.category }}</td>
                             <td>{{ item.cost }} spools</td>
                             <td>
-                                <button type="button" class="open-edit link-button" data-item-id="{{ item.id }}" data-name="{{ item.name }}" data-description="{{ item.description }}" data-cost="{{ item.cost }}" data-image-url="{{ item.imageUrl }}">Edit</button>
+                                <button type="button" class="open-edit link-button" data-item-id="{{ item.id }}" data-name="{{ item.name }}" data-description="{{ item.description }}" data-cost="{{ item.cost }}" data-image-url="{{ item.imageUrl }}" data-category="{{ item.category }}">Edit</button>
                                 <br>
                                 <form action="{% url 'delete_item' item.id %}" method="post" class="delete-form" style="display: inline;">
                                     {% csrf_token %}
@@ -79,6 +81,11 @@
                 <input type="url" name="imageUrl" placeholder="https://example.com" required>
             </label>
 
+            <label>
+                Category
+                <input name="category" maxlength="40" placeholder="Other" list="categoryOptions">
+            </label>
+
             <div class="modal-actions">
                 <button type="button" id="cancelCreateModal">Cancel</button>
                 <button type="submit">Create</button>
@@ -115,6 +122,11 @@
                 <input id="editImageUrl" type="url" name="imageUrl" placeholder="https://example.com" required>
             </label>
 
+            <label>
+                Category
+                <input id="editCategory" name="category" maxlength="40" placeholder="Other" list="categoryOptions">
+            </label>
+
             <div class="modal-actions">
                 <button type="button" id="cancelEditModal">Cancel</button>
                 <button type="submit">Save</button>
@@ -122,6 +134,12 @@
         </form>
     </div>
 </div>
+
+<datalist id="categoryOptions">
+    {% for category in categories %}
+        <option value="{{ category }}"></option>
+    {% endfor %}
+</datalist>
 
 <script>
     (function () {
@@ -193,6 +211,7 @@
         const editDescription = document.getElementById('editDescription');
         const editCost = document.getElementById('editCost');
         const editImageUrl = document.getElementById('editImageUrl');
+        const editCategory = document.getElementById('editCategory');
         const cancelEditBtn = document.getElementById('cancelEditModal');
 
         function openEditModal() {
@@ -219,12 +238,14 @@
             const description = openEditBtn.dataset.description || '';
             const cost = openEditBtn.dataset.cost || '';
             const imageUrl = openEditBtn.dataset.imageUrl || '';
+            const category = openEditBtn.dataset.category || '';
 
             editForm.action = '/shop/' + id + '/edit/';
             editName.value = name;
             editDescription.value = description;
             editCost.value = cost;
             editImageUrl.value = imageUrl;
+            editCategory.value = category;
 
             openEditModal();
             closeAllMenus();
