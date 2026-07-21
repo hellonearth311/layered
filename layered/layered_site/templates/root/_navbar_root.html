@@ -7,6 +7,9 @@
     {% if perms.layered_site.printer or perms.layered_site.organizer %}
         <a href="/root/print">print</a>
     {% endif %}
+    {% if perms.layered_site.organizer %}
+        <a href="/root/print/rewards">print rewards</a>
+    {% endif %}
     {% if perms.layered_site.t1_review or perms.layered_site.organizer or perms.layered_site.t2_review or perms.layered_site.t3_review %}
         <a href="/root/review">review</a>
     {% endif %}

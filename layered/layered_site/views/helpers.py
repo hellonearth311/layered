@@ -1,10 +1,11 @@
 from django.contrib.auth.decorators import user_passes_test
 from django.conf import settings
 from django.contrib import messages
-from django.db.models import Count
+from django.db import transaction
+from django.db.models import Count, Sum
 from django.contrib.auth import get_user_model
 from django.urls import reverse
-from ..models import AuditLog
+from ..models import AuditLog, Print, Ship, Item, Order, Profile
 
 from slack_sdk.errors import SlackApiError
 from slack_sdk import WebClient
@@ -284,3 +285,60 @@ def reviewer_leaderboard(relation, limit=10):
         .order_by("-n")[:limit]
     )
     return add_bars([{"label": display_name(u), "value": u.n} for u in rows])
+
+PRINT_REWARD_GRAMS = 1000
+
+
+def finalized_print_grams(printer):
+    return (
+        Print.objects.filter(
+            printer=printer,
+            weight__isnull=False,
+            ship__status=Ship.ShipStatus.FINALIZED,
+        ).aggregate(total=Sum("weight"))["total"]
+        or 0
+    )
+
+
+def get_print_reward_item():
+    return Item.objects.filter(is_print_reward=True, deleted=False).first()
+
+
+def grant_print_rewards(printer, request=None):
+    with transaction.atomic():
+        profile = Profile.objects.select_for_update().get(user=printer)
+        total_grams = finalized_print_grams(printer)
+        milestone = total_grams // PRINT_REWARD_GRAMS
+        owed = milestone - profile.print_reward_kg
+
+        if owed <= 0:
+            return {"created": 0, "owed": 0, "milestone": milestone, "no_item": False, "order": None}
+
+        reward_item = get_print_reward_item()
+        if reward_item is None:
+            return {"created": 0, "owed": owed, "milestone": milestone, "no_item": True, "order": None}
+
+        previous_kg = profile.print_reward_kg
+        order = Order.objects.create(
+            owner=printer,
+            item=reward_item,
+            quantity=owed,
+            cost=0,
+            status=Order.OrderStatus.PENDING,
+            admin_notes=f"Auto print reward: {milestone}kg printed"[:100],
+        )
+        profile.print_reward_kg = milestone
+        profile.save(update_fields=["print_reward_kg"])
+
+    if request is not None:
+        record_audit(request, "grant_print_reward", target=f"User #{printer.id} ({display_name(printer)})", metadata={
+            "printer": printer.username,
+            "order_id": order.id,
+            "reward_item": reward_item.name,
+            "quantity": owed,
+            "milestone_kg": milestone,
+            "previous_kg": previous_kg,
+            "total_grams": total_grams,
+        })
+
+    return {"created": owed, "owed": 0, "milestone": milestone, "no_item": False, "order": order}

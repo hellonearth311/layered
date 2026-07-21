@@ -66,6 +66,7 @@ class Profile(models.Model):
 	slack_username = models.CharField(max_length=64, blank=True, default="")
 	slack_pfp_url = models.CharField(max_length=200, blank=True, default="")
 	layers = models.IntegerField(default=0)
+	print_reward_kg = models.IntegerField(default=0)
 
 	def __str__(self):
 		return self.user.username
@@ -260,6 +261,7 @@ class Item(models.Model):
 	deleted = models.BooleanField(default=False)
 	imageUrl = models.URLField(max_length=2048, default="https://example.com")
 	category = models.CharField(max_length=40, default="Other")
+	is_print_reward = models.BooleanField(default=False)
 
 	def __str__(self):
 		return f"{self.name} ({self.description}) for {self.cost} layers"

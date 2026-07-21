@@ -7,7 +7,7 @@ from django.db import transaction
 from django.db.models import Sum
 
 from ...models import Profile, Project, Ship, T1, T2, T3
-from ..helpers import check_perms, send_slack_dm, record_audit, get_model_info, layers_for_minutes, build_journal_timeline, reviewer_leaderboard
+from ..helpers import check_perms, send_slack_dm, record_audit, get_model_info, layers_for_minutes, build_journal_timeline, reviewer_leaderboard, grant_print_rewards
 
 @staff_member_required
 @check_perms(["layered_site.t1_review", "layered_site.t2_review", "layered_site.organizer", "layered_site.t3_review"])
@@ -321,6 +321,23 @@ def t3_decision(request, ship_id):
         "payout_layers": payout_layers,
         "new_ship_status": ship.status,
     })
+
+    if decision == T3.Decision.APPROVE:
+        printers = {p.printer for p in ship.prints.filter(weight__isnull=False).select_related("printer")}
+        reward_missing_item = False
+        for printer in printers:
+            result = grant_print_rewards(printer, request=request)
+            if result["no_item"]:
+                reward_missing_item = True
+            if result["created"]:
+                printer_slack_id = printer.hackclub_profile.slack_id
+                if printer_slack_id:
+                    send_slack_dm(
+                        f"You've hit {result['milestone']}kg printed! A reward order has been created for you \N{PARTY POPPER}",
+                        printer_slack_id,
+                    )
+        if reward_missing_item:
+            messages.warning(request, "A printer earned a reward but no reward item is set. Designate one in shop management, then grant it from print rewards.")
 
     messages.success(request, f"Sucessfully reviewed project '{ship.project.title}' with decision {decision}")
     return redirect("fraud_review_dash")

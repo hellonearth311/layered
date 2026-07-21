@@ -6,9 +6,21 @@ from django.utils import timezone
 from django.db import transaction
 from django.db.models import Sum
 from django.shortcuts import get_object_or_404
+from django.contrib.auth import get_user_model
 
 from ...models import Ship, Print
-from ..helpers import check_perms, record_audit, send_slack_dm, is_valid_image_url, build_journal_timeline, reviewer_leaderboard
+from ..helpers import (
+    check_perms,
+    record_audit,
+    send_slack_dm,
+    is_valid_image_url,
+    build_journal_timeline,
+    reviewer_leaderboard,
+    grant_print_rewards,
+    finalized_print_grams,
+    get_print_reward_item,
+    PRINT_REWARD_GRAMS,
+)
 
 @staff_member_required
 @check_perms(["layered_site.printer", "layered_site.organizer"])
@@ -224,3 +236,93 @@ def print_decision(request, ship_id):
     )
 
     return redirect("print_dash")
+
+
+def _print_reward_rows():
+    """Per-printer progress toward 1kg print reward milestones (finalized ships only)."""
+    User = get_user_model()
+    printers = (
+        User.objects.filter(
+            prints__weight__isnull=False,
+            prints__ship__status=Ship.ShipStatus.FINALIZED,
+        )
+        .distinct()
+        .select_related("hackclub_profile")
+    )
+    rows = []
+    for user in printers:
+        grams = finalized_print_grams(user)
+        milestone = grams // PRINT_REWARD_GRAMS
+        rewarded = user.hackclub_profile.print_reward_kg
+        rows.append({
+            "user": user,
+            "grams": grams,
+            "kg": milestone,
+            "rewarded": rewarded,
+            "owed": max(milestone - rewarded, 0),
+        })
+    rows.sort(key=lambda r: (r["owed"], r["grams"]), reverse=True)
+    return rows
+
+
+@staff_member_required
+@check_perms(["layered_site.organizer"])
+def print_rewards(request):
+    return render(request, "root/print_rewards.html", {
+        "rows": _print_reward_rows(),
+        "reward_item": get_print_reward_item(),
+        "reward_grams": PRINT_REWARD_GRAMS,
+    })
+
+
+def _grant_and_message(request, printer):
+    """Grant a printer's due rewards and surface the outcome as a message."""
+    result = grant_print_rewards(printer, request=request)
+    label = printer.hackclub_profile.slack_username or printer.username
+    if result["no_item"]:
+        messages.error(request, "No reward item is set. Designate one in shop management first.")
+        return result
+    if result["created"]:
+        printer_slack_id = printer.hackclub_profile.slack_id
+        if printer_slack_id:
+            send_slack_dm(
+                f"You've hit {result['milestone']}kg printed! A reward order has been created for you \N{PARTY POPPER}",
+                printer_slack_id,
+            )
+        messages.success(request, f"Created a reward order for {label} ({result['created']}kg).")
+    else:
+        messages.info(request, f"{label} has no rewards due.")
+    return result
+
+
+@staff_member_required
+@require_POST
+@check_perms(["layered_site.organizer"])
+def grant_print_reward(request, user_id):
+    User = get_user_model()
+    printer = get_object_or_404(User, id=user_id)
+    _grant_and_message(request, printer)
+    return redirect("print_rewards")
+
+
+@staff_member_required
+@require_POST
+@check_perms(["layered_site.organizer"])
+def grant_all_print_rewards(request):
+    granted = 0
+    for row in _print_reward_rows():
+        if row["owed"] > 0:
+            result = grant_print_rewards(row["user"], request=request)
+            if result["no_item"]:
+                messages.error(request, "No reward item is set. Designate one in shop management first.")
+                return redirect("print_rewards")
+            if result["created"]:
+                granted += 1
+                printer_slack_id = row["user"].hackclub_profile.slack_id
+                if printer_slack_id:
+                    send_slack_dm(
+                        f"You've hit {result['milestone']}kg printed! A reward order has been created for you \N{PARTY POPPER}",
+                        printer_slack_id,
+                    )
+    messages.success(request, f"Granted rewards to {granted} printer(s).")
+    return redirect("print_rewards")
