@@ -41,7 +41,11 @@
             var info = document.querySelector('.review-main .project-info');
             var sidebar = document.querySelector('.review-sidebar');
             if (!info || !sidebar) return;
-            sidebar.style.maxHeight = info.offsetHeight + 'px';
+            var viewportCap = window.innerHeight - 48;
+            var borders = sidebar.offsetHeight - sidebar.clientHeight;
+            var contentHeight = sidebar.scrollHeight + borders;
+            var target = Math.max(info.offsetHeight, contentHeight);
+            sidebar.style.maxHeight = Math.min(target, viewportCap) + 'px';
         }
 
         window.addEventListener('resize', syncReviewSidebarHeight);
