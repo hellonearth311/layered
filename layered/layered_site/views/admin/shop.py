@@ -71,6 +71,18 @@ def update_order_status(request, order_id):
         order.fulfiller = request.user
         amount_refunded = None
 
+        held_statuses = {Order.OrderStatus.PENDING, Order.OrderStatus.FULFILLED}
+        was_held = prev_status in held_statuses
+        now_held = order.status in held_statuses
+        if was_held != now_held:
+            item = Item.objects.select_for_update().get(id=order.item_id)
+            if not item.unlimited_stock:
+                if now_held:
+                    item.stock = max(0, item.stock - order.quantity)
+                else:
+                    item.stock += order.quantity
+                item.save(update_fields=["stock"])
+
         if order.status == Order.OrderStatus.REFUNDED:
             amount_refunded = order.cost * order.quantity
             profile.layers += amount_refunded

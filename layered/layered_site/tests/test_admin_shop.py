@@ -284,3 +284,38 @@ class UpdateOrderStatusTests(BaseTestCase):
 		self._update("pending")
 		self.order.refresh_from_db()
 		self.assertEqual(self.order.status, Order.OrderStatus.PENDING)
+
+	def test_deny_restores_stock(self):
+		self.item.stock = 3
+		self.item.save(update_fields=["stock"])
+		self._update("denied")
+		self.item.refresh_from_db()
+		self.assertEqual(self.item.stock, 5)
+
+	def test_refund_restores_stock(self):
+		self.item.stock = 3
+		self.item.save(update_fields=["stock"])
+		self._update("refunded")
+		self.item.refresh_from_db()
+		self.assertEqual(self.item.stock, 5)
+
+	def test_reverting_denied_to_pending_recommits_stock(self):
+		self.item.stock = 3
+		self.item.save(update_fields=["stock"])
+		self._update("denied")
+		self._update("pending")
+		self.item.refresh_from_db()
+		self.assertEqual(self.item.stock, 3)
+
+	def test_fulfilling_pending_order_leaves_stock_unchanged(self):
+		self.item.stock = 3
+		self.item.save(update_fields=["stock"])
+		self._update("fulfilled")
+		self.item.refresh_from_db()
+		self.assertEqual(self.item.stock, 3)
+
+	def test_unlimited_stock_untouched_on_deny(self):
+		self.assertTrue(self.item.unlimited_stock)
+		self._update("denied")
+		self.item.refresh_from_db()
+		self.assertEqual(self.item.stock, -1)
